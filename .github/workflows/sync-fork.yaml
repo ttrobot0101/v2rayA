@@ -15,7 +15,7 @@ jobs:
       - name: Sync and merge upstream repository with your current repository
         uses: dabreadman/sync-upstream-repo@v1.3.0
         with:
-          upstream_repo: https://github.com/XTLS/Xray-core.git
+          upstream_repo: https://github.com/v2rayA/v2rayA.git
           upstream_branch: main
           downstream_branch: main
           token: ${{ secrets.SYNC_PAT }}
