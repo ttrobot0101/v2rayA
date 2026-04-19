@@ -96,7 +96,7 @@ export default {
     addOutbound: "新增一个出站 (outbound)",
     domainsExcluded: "排除域名",
     tproxyExcludedInterfaces: "不走代理的网卡前缀",
-    configureTunRouteScript: "配置路由脚本"
+    configureTunRouteScript: "配置路由脚本",
   },
   register: {
     title: "初来乍到，创建一个管理员账号",
@@ -131,6 +131,7 @@ export default {
     portSharingOn: "允许局域网的连接",
     concurrency: "最大并发数",
     tunProcessBackend: "TinyTun 进程排除方式",
+    tunExcludeProcesses: "TinyTun 自定义排除进程",
     ssBackend: "Shadowsocks 后端",
     trojanBackend: "Trojan 后端",
     nodeBackend: "后端",
@@ -178,6 +179,7 @@ export default {
         "开启时，TinyTun 自动配置系统路由。关闭时，需要提供自定义的启动/停止脚本手动配置路由。",
       tunBypassInterfaces: "勾选不走 TUN 代理的网卡，或在下方输入自定义通配符。",
       tunProcessBackend: "Linux 下选择 TinyTun 的进程排除实现。TUN 模式使用 /proc 查找，兼容性强；eBPF 模式通过 cgroupv2 钉子实现更准确的进程级排除，需安装 tinytun-ebpf.o（/usr/lib/tinytun/）。",
+      tunExcludeProcesses: "配置额外需要直通的进程名。建议一行一个，例如：chrome.exe、firefox。",
       pacMode:
         "该选项设置规则分流端口所使用的路由模式。默认情况下规则分流端口为20172，HTTP协议。",
       preventDnsSpoofing: "",
@@ -421,6 +423,13 @@ export default {
       setupScriptPlaceholder: "# TinyTun 启动时配置路由的脚本\n# 例如: ip route add default dev tun0",
       teardownScript: "停止脚本（TinyTun 停止前执行）",
       teardownScriptPlaceholder: "# TinyTun 停止时移除路由的脚本\n# 例如: ip route del default dev tun0",
-    }
+    },
+    processExclude: {
+      title: "TinyTun 自定义进程排除",
+      warning: "警告：错误的进程名可能导致流量被意外直通。请仅添加你确认需要排除的进程。",
+      listLabel: "排除进程名称",
+      placeholder: "v2raya\nv2ray\nchrome.exe",
+      hint: "支持逗号或换行分隔。保存时会自动去重。",
+    },
   }
 };

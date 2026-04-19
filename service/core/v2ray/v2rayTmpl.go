@@ -508,7 +508,6 @@ func (t *Template) setDNSRouting(routing []coreObj.RoutingRule, supportUDP map[s
 				})
 		}
 	}
-	return
 }
 
 func (t *Template) AppendRoutingRuleByMode(mode configure.RulePortMode, inbounds []string) (err error) {
@@ -2124,6 +2123,11 @@ func (t *Template) InsertMappingOutbound(o serverObj.ServerObj, inboundPort stri
 			Link: c.PluginManagerServerLink,
 			Port: pluginPort,
 		})
+	}
+	if strings.EqualFold(protocol, "") || strings.EqualFold(protocol, "socks") {
+		if len(c.PluginChain) > 0 && c.UDPSupport {
+			udpSupport = true
+		}
 	}
 	var mark = 0x80
 	t.checkAndSetMark(&c.CoreOutbound, mark)
