@@ -42,15 +42,12 @@ func GetV2rayLocationAsset(filename string) (string, error) {
 	var location string
 	var folder string
 	switch variant {
-	case where.V2ray:
-		location = "V2RAY_LOCATION_ASSET"
-		folder = "v2ray"
-	case where.Xray:
+	case where.V2rayaCore:
 		location = "XRAY_LOCATION_ASSET"
 		folder = "xray"
 	default:
-		location = "V2RAY_LOCATION_ASSET"
-		folder = "v2ray"
+		location = "XRAY_LOCATION_ASSET"
+		folder = "xray"
 	}
 
 	location = os.Getenv(location)
