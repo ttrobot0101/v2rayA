@@ -162,7 +162,6 @@ export default {
       leastPing: "最小时延优先",
       tunBackendTun: "TUN（默认，/proc 进程查找）",
       tunBackendEbpf: "eBPF（cgroupv2 进程排除）",
-      backendDaeuniverse: "daeuniverse/outbound",
       backendV2ray: "v2ray / xray",
       backendSystemDefault: "跟随系统设置",
     },

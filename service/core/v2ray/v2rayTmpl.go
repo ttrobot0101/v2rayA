@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-leo/slicex"
@@ -30,7 +29,6 @@ import (
 	"github.com/v2rayA/v2rayA/core/v2ray/asset"
 	"github.com/v2rayA/v2rayA/core/v2ray/where"
 	"github.com/v2rayA/v2rayA/db/configure"
-	"github.com/v2rayA/v2rayA/pkg/plugin"
 	"github.com/v2rayA/v2rayA/pkg/util/log"
 )
 
@@ -49,57 +47,20 @@ type Template struct {
 	Observatory      *coreObj.ObservatoryItem  `json:"observatory,omitempty"`
 	API              *coreObj.APIObject        `json:"api,omitempty"`
 
-	Variant               where.Variant          `json:"-"`
-	CoreVersion           string                 `json:"-"`
-	Plugins               []plugin.Server        `json:"-"`
-	OutboundTags          []string               `json:"-"`
-	ApiCloses             []func()               `json:"-"`
-	ApiPort               int                    `json:"-"`
-	Setting               *configure.Setting     `json:"-"`
-	PluginManagerInfoList []PluginManagerInfo    `json:"-"`
-	serverInfoMap         map[string]*serverInfo `json:"-"` // outbound tag -> server info
-}
-
-type PluginManagerInfo struct {
-	Link string
-	Port int
+	Variant       where.Variant          `json:"-"`
+	CoreVersion   string                 `json:"-"`
+	OutboundTags  []string               `json:"-"`
+	ApiCloses     []func()               `json:"-"`
+	ApiPort       int                    `json:"-"`
+	Setting       *configure.Setting     `json:"-"`
+	serverInfoMap map[string]*serverInfo `json:"-"` // outbound tag -> server info
 }
 
 func (t *Template) Close() error {
-	var err error
-	for _, p := range t.Plugins {
-		if e := p.Close(); err == nil && e != nil {
-			err = e
-		}
-	}
 	for _, f := range t.ApiCloses {
 		f()
 	}
-	return err
-}
-
-func (t *Template) ServePlugins() error {
-	var wg sync.WaitGroup
-	var err error
-	for _, p := range t.Plugins {
-		wg.Add(1)
-		nodeName := p.NodeName()
-		if nodeName == "" {
-			nodeName = "unknown"
-		}
-		log.Trace("[v2ray] starting plugin on %s (node: %s)", p.ListenAddr(), nodeName)
-		go func(p plugin.Server) {
-			if e := p.ListenAndServe(); e != nil {
-				log.Warn("[v2ray] plugin on %s (node: %s) exited with error: %v", p.ListenAddr(), p.NodeName(), e)
-				err = e
-			} else {
-				log.Trace("[v2ray] plugin on %s (node: %s) stopped", p.ListenAddr(), p.NodeName())
-			}
-			wg.Done()
-		}(p)
-	}
-	log.Trace("[v2ray] all plugins are starting...")
-	return err
+	return nil
 }
 
 type Addr struct {
@@ -1519,7 +1480,6 @@ func (t *Template) resolveOutbounds(
 		weight   int
 		outbound coreObj.OutboundObject
 		balancer bool
-		plugin   plugin.Server
 	}
 	serverInfo2Index := make(map[*serverInfo]int)
 	for i := range serverData.ServerInfos {
@@ -1532,8 +1492,7 @@ func (t *Template) resolveOutbounds(
 	setting := configure.GetSettingNotNil()
 	for obj, sInfos := range serverData.ServerObj2ServerInfos() {
 		var (
-			usedByBalancer     bool
-			balancerPluginPort int
+			usedByBalancer bool
 		)
 		// an vmessInfo(server template) may be used by multiple serverInfos(a connected server)
 
@@ -1548,7 +1507,6 @@ func (t *Template) resolveOutbounds(
 				// balancer
 				if !usedByBalancer {
 					usedByBalancer = true
-					balancerPluginPort = sInfo.PluginPort
 				}
 				balancers = append(balancers, balancer{
 					name:       sInfo.OutboundName,
@@ -1570,24 +1528,10 @@ func (t *Template) resolveOutbounds(
 				// Store server info for this outbound
 				t.serverInfoMap[outboundTag] = sInfo
 				extraOutbounds = append(extraOutbounds, c.ExtraOutbounds...)
-				if c.PluginManagerServerLink != "" {
-					t.PluginManagerInfoList = append(t.PluginManagerInfoList, PluginManagerInfo{
-						Link: c.PluginManagerServerLink,
-						Port: sInfo.PluginPort,
-					})
-				}
-				var s plugin.Server
-				if len(c.PluginChain) > 0 {
-					s, err = plugin.ServerFromChain(c.PluginChain, sInfo.Info.GetName())
-					if err != nil {
-						return nil, nil, err
-					}
-				}
 				outbounds = append(outbounds, _outbound{
 					weight:   serverInfo2Index[sInfo],
 					outbound: c.CoreOutbound,
 					balancer: false,
-					plugin:   s,
 				})
 				outboundTags[serverInfo2Index[sInfo]] = outboundTag
 				supportUDP[sInfo.OutboundName] = c.UDPSupport
@@ -1600,7 +1544,7 @@ func (t *Template) resolveOutbounds(
 				Variant:     t.Variant,
 				CoreVersion: t.CoreVersion,
 				Tag:         outboundTag,
-				PluginPort:  balancerPluginPort,
+				PluginPort:  0,
 				Backend:     resolveEffectiveBackend(obj, setting),
 			})
 			if err != nil {
@@ -1614,12 +1558,6 @@ func (t *Template) resolveOutbounds(
 			for _, v := range balancers {
 				c.CoreOutbound.Balancers = append(c.CoreOutbound.Balancers, v.name)
 			}
-			if c.PluginManagerServerLink != "" {
-				t.PluginManagerInfoList = append(t.PluginManagerInfoList, PluginManagerInfo{
-					Link: c.PluginManagerServerLink,
-					Port: balancerPluginPort,
-				})
-			}
 			// we use the lowest serverInfo index as the order weight of the balancer outbound
 			weight := -1
 			for _, v := range balancers {
@@ -1630,18 +1568,10 @@ func (t *Template) resolveOutbounds(
 				// tag
 				outboundTags[index] = outboundTag
 			}
-			var s plugin.Server
-			if len(c.PluginChain) > 0 {
-				s, err = plugin.ServerFromChain(c.PluginChain, obj.GetName())
-				if err != nil {
-					return nil, nil, err
-				}
-			}
 			outbounds = append(outbounds, _outbound{
 				weight:   weight,
 				outbound: c.CoreOutbound,
 				balancer: true,
-				plugin:   s,
 			})
 
 			// if any node does not support UDP, the outbound should be tagged as UDP unsupported
@@ -1660,9 +1590,6 @@ func (t *Template) resolveOutbounds(
 		return outbounds[i].weight < outbounds[j].weight
 	})
 	for _, v := range outbounds {
-		if v.plugin != nil {
-			t.Plugins = append(t.Plugins, v.plugin)
-		}
 		t.Outbounds = append(t.Outbounds, v.outbound)
 	}
 	t.Outbounds = append(t.Outbounds, coreObj.OutboundObject{
@@ -1742,15 +1669,20 @@ func (t *Template) SetAPI(serverData *ServerData) (port int, err error) {
 					Tag: outbound,
 					Settings: coreObj.Observatory{
 						SubjectSelector: selector,
-						ProbeURL:        probeUrl,
-						ProbeInterval:   interval.String(),
+						PingConfig: &coreObj.PingConfig{
+							Destination: probeUrl,
+							Interval:    interval.String(),
+						},
+						// Keep legacy fields for backward compatibility with older custom cores.
+						ProbeURL:      probeUrl,
+						ProbeInterval: interval.String(),
 					},
 				})
 			}
 		}
 		if t.MultiObservatory != nil || t.Observatory != nil {
-				// v2raya_core supports ObservatoryService via the v2ray-compat gRPC path.
-				if t.Variant == where.V2rayaCore {
+			// v2raya_core supports ObservatoryService via the v2ray-compat gRPC path.
+			if t.Variant == where.V2rayaCore {
 
 				var observatoryTags []string
 				for name, isGroup := range t.outNames() {
@@ -2090,24 +2022,6 @@ func (t *Template) InsertMappingOutbound(o serverObj.ServerObj, inboundPort stri
 	})
 	if err != nil {
 		return err
-	}
-	if len(c.PluginChain) > 0 {
-		if server, err := plugin.ServerFromChain(c.PluginChain, o.GetName()); err != nil {
-			return err
-		} else {
-			t.Plugins = append(t.Plugins, server)
-		}
-	}
-	if c.PluginManagerServerLink != "" {
-		t.PluginManagerInfoList = append(t.PluginManagerInfoList, PluginManagerInfo{
-			Link: c.PluginManagerServerLink,
-			Port: pluginPort,
-		})
-	}
-	if strings.EqualFold(protocol, "") || strings.EqualFold(protocol, "socks") {
-		if len(c.PluginChain) > 0 && c.UDPSupport {
-			udpSupport = true
-		}
 	}
 	var mark = 0x80
 	t.checkAndSetMark(&c.CoreOutbound, mark)

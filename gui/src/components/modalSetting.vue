@@ -298,19 +298,6 @@
           style="flex: 1" />
       </b-field>
 
-      <b-field :label="$t('setting.ssBackend')" label-position="on-border">
-        <b-select v-model="ssBackend" expanded>
-          <option value="">{{ $t("setting.options.backendDaeuniverse") }}</option>
-          <option value="v2ray">{{ $t("setting.options.backendV2ray") }}</option>
-        </b-select>
-      </b-field>
-
-      <b-field :label="$t('setting.trojanBackend')" label-position="on-border">
-        <b-select v-model="trojanBackend" expanded>
-          <option value="">{{ $t("setting.options.backendDaeuniverse") }}</option>
-          <option value="v2ray">{{ $t("setting.options.backendV2ray") }}</option>
-        </b-select>
-      </b-field>
 
       <b-field v-show="pacMode === 'gfwlist' || transparent === 'gfwlist'" :label="$t('setting.autoUpdateGfwlist')"
         label-position="on-border">
@@ -420,8 +407,6 @@ export default {
     tunTeardownScript: "",
     tunProcessBackend: "",
     tunExcludeProcesses: "",
-    ssBackend: "",
-    trojanBackend: "",
     pacAutoUpdateMode: "none",
     pacAutoUpdateIntervalHour: 0,
     subscriptionAutoUpdateMode: "none",
@@ -579,8 +564,6 @@ export default {
             tunTeardownScript: this.tunTeardownScript,
             tunProcessBackend: this.tunProcessBackend,
             tunExcludeProcesses: this.tunExcludeProcesses,
-            ssBackend: this.ssBackend,
-            trojanBackend: this.trojanBackend,
           },
           cancelToken: new axios.CancelToken(function executor(c) {
             cancel = c;

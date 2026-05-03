@@ -163,7 +163,6 @@ export default {
       leastPing: "Least Latency First",
       tunBackendTun: "TUN (default, /proc process lookup)",
       tunBackendEbpf: "eBPF (cgroupv2 process exclusion)",
-      backendDaeuniverse: "daeuniverse/outbound",
       backendV2ray: "v2ray / xray",
       backendSystemDefault: "System Default",
     },

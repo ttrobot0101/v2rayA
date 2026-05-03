@@ -31,8 +31,7 @@ type Process struct {
 	// mutex protect the proc
 	mutex          sync.Mutex
 	proc           *os.Process
-	procCancel     func() // cancel func for proc and pluginManagers
-	pluginManagers []*os.Process
+	procCancel     func() // cancel func for proc
 	template       *Template
 	tag2WhichIndex map[string]int
 	done           chan struct{}
@@ -62,35 +61,12 @@ func NewProcess(tmpl *Template,
 	if err = tmpl.CheckInboundPortsOccupied(); err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
-	go tmpl.ServePlugins()
 	pCtx, cancel := context.WithCancel(context.Background())
 	defer func() {
 		if err != nil {
 			cancel()
 		}
 	}()
-	// start PluginManagers
-	if pm := conf.GetEnvironmentConfig().PluginManager; pm != "" {
-		for _, v := range tmpl.PluginManagerInfoList {
-			arguments := []string{
-				pm,
-				"--stage=run",
-				fmt.Sprintf("--link=%v", v.Link),
-				fmt.Sprintf("--port=%v", v.Port),
-				fmt.Sprintf("--v2raya-confdir=%v", conf.GetEnvironmentConfig().Config),
-			}
-			proc, err := RunWithLog(pCtx, pm, arguments, "", os.Environ())
-			if err != nil {
-				// clean
-				for _, pm := range process.pluginManagers {
-					_ = pm.Kill()
-				}
-				process.pluginManagers = nil
-				return nil, fmt.Errorf("executing PluginManager [state: run, link: %v]: %w", v.Link, err)
-			}
-			process.pluginManagers = append(process.pluginManagers, proc)
-		}
-	}
 	defer func() {
 		if err != nil {
 			_ = tmpl.Close()
@@ -135,13 +111,6 @@ func NewProcess(tmpl *Template,
 	}()
 	// ports to check
 	portList := []string{strconv.Itoa(tmpl.ApiPort)}
-	for _, plu := range tmpl.Plugins {
-		_, port, err := net.SplitHostPort(plu.ListenAddr())
-		if err != nil {
-			return nil, err
-		}
-		portList = append(portList, port)
-	}
 	log.Trace("portList for connectivity test: %+v", portList)
 	startTime := time.Now()
 	startTimeOut := time.Duration(conf.GetEnvironmentConfig().CoreStartupTimeout) * time.Second
