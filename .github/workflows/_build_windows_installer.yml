@@ -30,8 +30,8 @@ jobs:
     - name: Download TinyTun x64
       shell: pwsh
       run: |
-        $Url_TinyTun_x64 = "https://github.com/v2rayA/TinyTun/releases/download/v0.0.2-alpha.5/tinytun-v0.0.2-alpha.5-x86_64-pc-windows-gnullvm.zip"
-        $sha256_TinyTun_x64 = "c6b604f6938c5d841cc83c119aba695cf068a4b6196d1781fe48560bceee9830"
+        $Url_TinyTun_x64 = "https://github.com/v2rayA/TinyTun/releases/download/v0.0.2-alpha.7/tinytun-v0.0.2-alpha.7-x86_64-pc-windows-gnullvm.zip"
+        $sha256_TinyTun_x64 = "56fc9d62e5ddac537f74794dd2e704edd70103b1c1f3cc9ad00081a1e49e792e"
         Invoke-WebRequest $Url_TinyTun_x64 -OutFile "D:\tinytun-x64.zip"
         $hash_TinyTun_x64 = Get-FileHash -Path "D:\tinytun-x64.zip" -Algorithm SHA256
         if ($hash_TinyTun_x64.Hash -ne $sha256_TinyTun_x64) {
@@ -53,8 +53,8 @@ jobs:
     - name: Download TinyTun arm64
       shell: pwsh
       run: |
-        $Url_TinyTun_arm64 = "https://github.com/v2rayA/TinyTun/releases/download/v0.0.2-alpha.5/tinytun-v0.0.2-alpha.5-aarch64-pc-windows-gnullvm.zip"
-        $sha256_TinyTun_arm64 = "51f8f6452b1686ea0fd4c4b105b97a7a6bed1a1d11f698a4d139f1e739261b30"
+        $Url_TinyTun_arm64 = "https://github.com/v2rayA/TinyTun/releases/download/v0.0.2-alpha.7/tinytun-v0.0.2-alpha.7-aarch64-pc-windows-gnullvm.zip"
+        $sha256_TinyTun_arm64 = "59e94de419e91c98957644cd2e07e6b8f3fee22907edef9c08876174439a8689"
         Invoke-WebRequest $Url_TinyTun_arm64 -OutFile "D:\tinytun-arm64.zip"
         $hash_TinyTun_arm64 = Get-FileHash -Path "D:\tinytun-arm64.zip" -Algorithm SHA256
         if ($hash_TinyTun_arm64.Hash -ne $sha256_TinyTun_arm64) {
@@ -89,17 +89,17 @@ jobs:
         Expand-Archive -Path "D:\tinytun-arm64.zip" -DestinationPath "D:\tinytun-arm64"
         Move-Item -Path "D:\tinytun-arm64\tinytun-aarch64-pc-windows-gnullvm.exe" -Destination "D:\v2raya-arm64-windows\bin\tinytun.exe"
         Move-Item -Path "D:\tinytun-arm64\wintun.dll" -Destination "D:\v2raya-arm64-windows\bin\wintun.dll"
-        ## Download and extract v2ray
-        $Url_v2ray_x64 = "https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-windows-64.zip"
-        $Url_v2ray_A64 = "https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-windows-arm64-v8a.zip"
-        Invoke-WebRequest $Url_v2ray_x64 -OutFile "D:\v2ray-windows-x64.zip"
-        Expand-Archive -Path "D:\v2ray-windows-x64.zip" -DestinationPath "D:\v2raya-x64compatible-windows\bin\"
-        Move-Item -Path "D:\v2raya-x64compatible-windows\bin\*.dat" -Destination "D:\v2raya-x64compatible-windows\data\"
-        Remove-Item -Path "D:\v2raya-x64compatible-windows\bin\*.json" -Force -Recurse -ErrorAction SilentlyContinue
-        Invoke-WebRequest $Url_v2ray_A64 -OutFile "D:\v2ray-windows-A64.zip"
-        Expand-Archive -Path "D:\v2ray-windows-A64.zip" -DestinationPath "D:\v2raya-arm64-windows\bin\"
-        Move-Item -Path "D:\v2raya-arm64-windows\bin\*.dat" -Destination "D:\v2raya-arm64-windows\data\"
-        Remove-Item -Path "D:\v2raya-arm64-windows\bin\*.json" -Force -Recurse -ErrorAction SilentlyContinue
+        ## Download DAT files directly from Loyalsoldier release
+        $DatBaseUrl = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download"
+        $DatFiles = @("geoip.dat", "geosite.dat")
+        foreach ($DatFile in $DatFiles) {
+          Invoke-WebRequest "$DatBaseUrl/$DatFile" -OutFile "D:\$DatFile"
+          Copy-Item -Path "D:\$DatFile" -Destination "D:\v2raya-x64compatible-windows\data\$DatFile"
+          Copy-Item -Path "D:\$DatFile" -Destination "D:\v2raya-arm64-windows\data\$DatFile"
+        }
+        ## Keep legacy alias for compatibility
+        Copy-Item -Path "D:\geosite.dat" -Destination "D:\v2raya-x64compatible-windows\data\LoyalsoldierSite.dat"
+        Copy-Item -Path "D:\geosite.dat" -Destination "D:\v2raya-arm64-windows\data\LoyalsoldierSite.dat"
         Copy-Item -Path ".\LICENSE" -Destination "D:\LICENSE.txt"
         Copy-Item -Path ".\install\windows-inno\ChineseSimplified.isl" -Destination "D:\ChineseSimplified.isl"
         ## Set Version

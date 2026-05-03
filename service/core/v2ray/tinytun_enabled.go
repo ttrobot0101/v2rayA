@@ -22,7 +22,7 @@ import (
 	"github.com/v2rayA/v2rayA/pkg/util/log"
 )
 
-// This file supports TinyTun v0.0.2-alpha.5.
+// This file supports TinyTun v0.0.2-alpha.7.
 
 // tinytunLogConf represents the log settings in TinyTun config.
 type tinytunLogConf struct {
@@ -30,7 +30,7 @@ type tinytunLogConf struct {
 	HideTimestamp bool   `yaml:"hide_timestamp"`
 }
 
-// tinytunTunConf represents the TUN interface settings in TinyTun v0.0.2-alpha.3 config.
+// tinytunTunConf represents the TUN interface settings in TinyTun v0.0.2-alpha.7 config.
 type tinytunTunConf struct {
 	Name       string `yaml:"name"`
 	IP         string `yaml:"ip"`
@@ -90,7 +90,7 @@ type tinytunDnsHijackConf struct {
 	CaptureTCP bool `yaml:"capture_tcp"`
 }
 
-// tinytunDnsConf represents the DNS settings in TinyTun v0.0.2-alpha.3 config.
+// tinytunDnsConf represents the DNS settings in TinyTun v0.0.2-alpha.7 config.
 // TinyTun handles DNS routing natively; v2ray is used only for traffic forwarding.
 type tinytunDnsConf struct {
 	Groups     []tinytunDnsGroupConf `yaml:"groups"`
