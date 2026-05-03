@@ -22,6 +22,11 @@ jobs:
       with:
         name: v2raya_windows_x64_${{ inputs.version }}.exe
         path: D:\Downloads
+    - name: Download Core Artifact Windows x64
+      uses: actions/download-artifact@v8
+      with:
+        name: v2raya_core_windows_x64_${{ inputs.version }}.exe
+        path: D:\Downloads
     - name: Download TinyTun x64
       shell: pwsh
       run: |
@@ -39,6 +44,11 @@ jobs:
       uses: actions/download-artifact@v8
       with:
         name: v2raya_windows_arm64_${{ inputs.version }}.exe
+        path: D:\Downloads
+    - name: Download Core Artifact Windows arm64
+      uses: actions/download-artifact@v8
+      with:
+        name: v2raya_core_windows_arm64_${{ inputs.version }}.exe
         path: D:\Downloads
     - name: Download TinyTun arm64
       shell: pwsh
@@ -69,6 +79,8 @@ jobs:
         ## Copy v2rayA to Destination Directory
         Copy-Item -Path D:\Downloads\v2raya_windows_arm64_${{ inputs.version }}.exe -Destination D:\v2raya-arm64-windows\bin\v2raya.exe
         Copy-Item -Path D:\Downloads\v2raya_windows_x64_${{ inputs.version }}.exe -Destination D:\v2raya-x64compatible-windows\bin\v2raya.exe
+        Copy-Item -Path D:\Downloads\v2raya_core_windows_arm64_${{ inputs.version }}.exe -Destination D:\v2raya-arm64-windows\bin\v2raya_core.exe
+        Copy-Item -Path D:\Downloads\v2raya_core_windows_x64_${{ inputs.version }}.exe -Destination D:\v2raya-x64compatible-windows\bin\v2raya_core.exe
         Copy-Item -Path ".\install\windows-inno\v2raya.ico" -Destination "D:\v2raya.ico"
         ## Copy TinyTun to Destination Directory
         Expand-Archive -Path "D:\tinytun-x64.zip" -DestinationPath "D:\tinytun-x64"
