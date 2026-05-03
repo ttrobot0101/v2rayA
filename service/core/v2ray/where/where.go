@@ -17,13 +17,19 @@ import (
 type Variant string
 
 const (
-	Unknown Variant = "Unknown"
-	V2ray   Variant = "V2Ray"
-	Xray    Variant = "Xray"
+	Unknown    Variant = "Unknown"
+	// V2rayaCore is the merged v2raya-core binary (xray-core + MultiObservatory).
+	// Binary name: v2raya_core
+	V2rayaCore Variant = "V2rayaCore"
+
+	// Deprecated aliases kept for smooth migration; treated as V2rayaCore internally.
+	V2ray  = V2rayaCore
+	Xray   = V2rayaCore
+	Merged = V2rayaCore
 )
 
 var NotFoundErr = fmt.Errorf("not found")
-var ServiceNameList = []string{"xray", "v2ray"}
+var ServiceNameList = []string{"v2raya_core"}
 var v2rayVersion struct {
 	variant    Variant
 	version    string
@@ -32,20 +38,15 @@ var v2rayVersion struct {
 	mu         sync.Mutex
 }
 
-/* Detect core type by binary name */
+/* DetectCoreTypeByBinaryName detects the variant from the binary file name. */
 func DetectCoreTypeByBinaryName(binPath string) Variant {
 	baseName := strings.ToLower(filepath.Base(binPath))
-	// Remove .exe suffix on Windows
+	// Remove .exe suffix on Windows.
 	baseName = strings.TrimSuffix(baseName, ".exe")
-
-	switch baseName {
-	case "v2ray":
-		return V2ray
-	case "xray":
-		return Xray
-	default:
-		return Unknown
+	if baseName == "v2raya_core" {
+		return V2rayaCore
 	}
+	return Unknown
 }
 
 /* get the version of v2ray-core without 'v' like 4.23.1 */
@@ -72,12 +73,10 @@ func GetV2rayServiceVersion() (variant Variant, ver string, err error) {
 	if envConfig.CoreType != "" {
 		coreType := strings.ToLower(envConfig.CoreType)
 		switch coreType {
-		case "v2ray":
-			variant = V2ray
-		case "xray":
-			variant = Xray
+		case "v2raya_core", "v2raya-core":
+			variant = V2rayaCore
 		default:
-			return Unknown, "", fmt.Errorf("invalid core type '%s', must be 'v2ray' or 'xray'", envConfig.CoreType)
+			return Unknown, "", fmt.Errorf("invalid core type '%s', only 'v2raya_core' is supported", envConfig.CoreType)
 		}
 	} else {
 		// Auto-detect by binary name
@@ -113,10 +112,8 @@ func GetV2rayServiceVersion() (variant Variant, ver string, err error) {
 	// Verify the detected/specified variant matches the actual binary
 	detectedVariant := Unknown
 	switch strings.ToUpper(fields[0]) {
-	case "V2RAY":
-		detectedVariant = V2ray
-	case "XRAY":
-		detectedVariant = Xray
+	case "V2RAYA_CORE":
+		detectedVariant = V2rayaCore
 	}
 
 	if detectedVariant != Unknown && detectedVariant != variant {

@@ -262,16 +262,9 @@ func StartCoreProcess(ctx context.Context) (*os.Process, error) {
 		arguments = append(arguments, "--confdir="+confdir)
 	}
 
-	// Get core variant to determine which environment variable to use
-	variant, _, err := where.GetV2rayServiceVersion()
-	if err != nil {
-		// Fallback to Unknown if detection fails
-		variant = where.Unknown
-	}
-
 	// Get asset directory
 	assetDir := asset.GetV2rayLocationAssetOverride()
-	log.Info("Asset directory for %s: %v", variant, assetDir)
+	log.Info("Asset directory for %s: %v", "v2raya_core", assetDir)
 
 	// Prepare environment variables, filtering out duplicates
 	env := make([]string, 0, len(os.Environ())+4)
@@ -285,19 +278,9 @@ func StartCoreProcess(ctx context.Context) (*os.Process, error) {
 		env = append(env, e)
 	}
 
-	// Add asset directory to environment based on core type
-	switch variant {
-	case where.V2ray:
-		env = append(env, "V2RAY_LOCATION_ASSET="+assetDir)
-	case where.Xray:
-		env = append(env, "XRAY_LOCATION_ASSET="+assetDir)
-	default:
-		// If unknown, set both for compatibility
-		env = append(env,
-			"V2RAY_LOCATION_ASSET="+assetDir,
-			"XRAY_LOCATION_ASSET="+assetDir,
-		)
-	}
+	// Add asset directory to environment based on core type.
+	// v2raya_core is based on xray-core and uses XRAY_LOCATION_ASSET.
+	env = append(env, "XRAY_LOCATION_ASSET="+assetDir)
 
 	// Check memory and set geoloader mode
 	memstat, err := mem.VirtualMemory()

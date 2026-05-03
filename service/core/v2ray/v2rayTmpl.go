@@ -1735,43 +1735,23 @@ func (t *Template) SetAPI(serverData *ServerData) (port int, err error) {
 					probeUrl = "https://gstatic.com/generate_204"
 				}
 
-				// Use different observatory structure based on core type
-				if t.Variant == where.Xray {
-					// Xray uses a single observatory with all selectors combined
-					if t.Observatory == nil {
-						t.Observatory = &coreObj.ObservatoryItem{
-							Tag: "observatory",
-							Settings: coreObj.Observatory{
-								SubjectSelector: selector,
-								ProbeURL:        probeUrl,
-								ProbeInterval:   interval.String(),
-							},
-						}
-					} else {
-						// Merge selectors for existing observatory
-						t.Observatory.Settings.SubjectSelector = append(t.Observatory.Settings.SubjectSelector, selector...)
-					}
-				} else {
-					// V2ray uses multiObservatory with multiple observers
-					if t.MultiObservatory == nil {
-						t.MultiObservatory = &coreObj.MultiObservatory{}
-					}
-					t.MultiObservatory.Observers = append(t.MultiObservatory.Observers, coreObj.ObservatoryItem{
-						Tag: outbound,
-						Settings: coreObj.Observatory{
-							SubjectSelector: selector,
-							ProbeURL:        probeUrl,
-							ProbeInterval:   interval.String(),
-						},
-					})
+				// v2raya_core always uses MultiObservatory: one observer per balancer group.
+				if t.MultiObservatory == nil {
+					t.MultiObservatory = &coreObj.MultiObservatory{}
 				}
+				t.MultiObservatory.Observers = append(t.MultiObservatory.Observers, coreObj.ObservatoryItem{
+					Tag: outbound,
+					Settings: coreObj.Observatory{
+						SubjectSelector: selector,
+						ProbeURL:        probeUrl,
+						ProbeInterval:   interval.String(),
+					},
+				})
 			}
 		}
 		if t.MultiObservatory != nil || t.Observatory != nil {
-			// Observatory API is only available in v2ray-core v5+
-			// xray-core has different API structure and doesn't support this gRPC service
-			if t.Variant == where.V2ray {
-				services = append(services, "ObservatoryService")
+				// v2raya_core supports ObservatoryService via the v2ray-compat gRPC path.
+				if t.Variant == where.V2rayaCore {
 
 				var observatoryTags []string
 				for name, isGroup := range t.outNames() {
