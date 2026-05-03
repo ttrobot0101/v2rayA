@@ -1,5 +1,7 @@
 package coreObj
 
+import "encoding/json"
+
 type APIObject struct {
 	Tag      string   `json:"tag"`
 	Services []string `json:"services"`
@@ -12,9 +14,19 @@ type ObservatoryItem struct {
 	Settings Observatory `json:"settings"`
 }
 type Observatory struct {
-	SubjectSelector []string `json:"subjectSelector"`
-	ProbeURL        string   `json:"probeURL,omitempty"`
-	ProbeInterval   string   `json:"probeInterval,omitempty"`
+	SubjectSelector []string    `json:"subjectSelector"`
+	PingConfig      *PingConfig `json:"pingConfig,omitempty"`
+	ProbeURL        string      `json:"probeURL,omitempty"`
+	ProbeInterval   string      `json:"probeInterval,omitempty"`
+}
+
+type PingConfig struct {
+	Destination   string `json:"destination,omitempty"`
+	Connectivity  string `json:"connectivity,omitempty"`
+	Interval      string `json:"interval,omitempty"`
+	SamplingCount int    `json:"samplingCount,omitempty"`
+	Timeout       string `json:"timeout,omitempty"`
+	HTTPMethod    string `json:"httpMethod,omitempty"`
 }
 type Balancer struct {
 	Tag      string           `json:"tag"`
@@ -120,7 +132,22 @@ type Settings struct {
 	Network        string      `json:"network,omitempty"`
 	Redirect       string      `json:"redirect,omitempty"`
 	UserLevel      *int        `json:"userLevel,omitempty"`
+	// Inlined, when non-nil, replaces the entire settings JSON during serialization.
+	// Used for non-standard protocols such as anytls/juicity whose settings do not
+	// fit the standard fields above.
+	Inlined json.RawMessage `json:"-"`
 }
+
+// MarshalJSON implements json.Marshaler. When Inlined is set it is emitted verbatim;
+// otherwise normal struct marshaling is used.
+func (s Settings) MarshalJSON() ([]byte, error) {
+	if s.Inlined != nil {
+		return s.Inlined, nil
+	}
+	type Alias Settings
+	return json.Marshal(Alias(s))
+}
+
 type TLSSettings struct {
 	AllowInsecure                    bool          `json:"allowInsecure"`
 	ServerName                       interface{}   `json:"serverName,omitempty"`

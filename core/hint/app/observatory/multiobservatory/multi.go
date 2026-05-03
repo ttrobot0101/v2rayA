@@ -6,8 +6,10 @@ package multiobservatory
 import (
 	"context"
 	"sync"
+	"time"
 
-	"github.com/xtls/xray-core/app/observatory"
+	xray_obs "github.com/xtls/xray-core/app/observatory"
+	"github.com/xtls/xray-core/app/observatory/burst"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/features/extension"
 	"google.golang.org/protobuf/proto"
@@ -55,17 +57,17 @@ func (m *MultiObservatory) GetObservation(ctx context.Context) (proto.Message, e
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var combined []*observatory.OutboundStatus
+	var combined []*xray_obs.OutboundStatus
 	for _, child := range m.children {
 		result, err := child.GetObservation(ctx)
 		if err != nil {
 			continue
 		}
-		if obs, ok := result.(*observatory.ObservationResult); ok {
+		if obs, ok := result.(*xray_obs.ObservationResult); ok {
 			combined = append(combined, obs.GetStatus()...)
 		}
 	}
-	return &observatory.ObservationResult{Status: combined}, nil
+	return &xray_obs.ObservationResult{Status: combined}, nil
 }
 
 // GetObservationByTag returns the ObservationResult for a specific group tag.
@@ -89,12 +91,20 @@ func New(ctx context.Context, config *Config) (*MultiObservatory, error) {
 	}
 
 	for _, obs := range config.GetObservers() {
-		childCfg := &observatory.Config{
-			SubjectSelector: obs.GetSubjectSelector(),
-			ProbeUrl:        obs.GetProbeUrl(),
-			ProbeInterval:   obs.GetProbeInterval(),
+		pingCfg := &burst.HealthPingConfig{
+			Destination: obs.GetProbeUrl(),
+			Interval:    obs.GetProbeInterval(),
 		}
-		child, err := observatory.New(ctx, childCfg)
+		// Keep legacy 10s probing behavior when interval isn't configured.
+		if pingCfg.Interval == 0 {
+			pingCfg.Interval = int64(10 * time.Second)
+		}
+
+		childCfg := &burst.Config{
+			SubjectSelector: obs.GetSubjectSelector(),
+			PingConfig:      pingCfg,
+		}
+		child, err := burst.New(ctx, childCfg)
 		if err != nil {
 			return nil, err
 		}

@@ -97,7 +97,7 @@ export default {
     addOutbound: "Add an outbound",
     domainsExcluded: "Domains Excluded",
     tproxyExcludedInterfaces: "Excluded Interface Prefixes",
-    configureTunRouteScript: "Configure Route Script"
+    configureTunRouteScript: "Configure Route Script",
   },
   register: {
     title: "Create an admin account first",
@@ -132,6 +132,7 @@ export default {
     concurrency: "Concurrency",
     inboundSniffing: "Sniffing",
     tunProcessBackend: "Process Exclusion Backend",
+    tunExcludeProcesses: "TinyTun Excluded Processes",
     ssBackend: "Shadowsocks Backend",
     trojanBackend: "Trojan Backend",
     nodeBackend: "Backend",
@@ -162,7 +163,6 @@ export default {
       leastPing: "Least Latency First",
       tunBackendTun: "TUN (default, /proc process lookup)",
       tunBackendEbpf: "eBPF (cgroupv2 process exclusion)",
-      backendDaeuniverse: "daeuniverse/outbound",
       backendV2ray: "v2ray / xray",
       backendSystemDefault: "System Default",
     },
@@ -180,6 +180,7 @@ export default {
         "When enabled, TinyTun automatically configures system routes. When disabled, you must provide custom setup/teardown scripts to configure routing yourself.",
       tunBypassInterfaces: "Select interfaces to exclude from TUN proxying, or enter custom glob patterns below.",
       tunProcessBackend: "Choose TinyTun's process exclusion method on Linux. TUN mode uses /proc scanning for broad compatibility; eBPF mode uses cgroupv2 hooks for more accurate process-level exclusion, requiring tinytun-ebpf.o at /usr/lib/tinytun/.",
+      tunExcludeProcesses: "Configure additional process names to bypass TinyTun. One name per line is recommended, e.g. chrome.exe or firefox.",
       pacMode: `Here you can set the splitting traffic rule of the rule port. By default, "Rule of Splitting Traffic" port is 20172 and HTTP protocol.`,
       preventDnsSpoofing: "",
       tcpFastOpen:
@@ -418,6 +419,13 @@ export default {
       setupScriptPlaceholder: "# Script to configure routes when TinyTun starts\n# e.g. ip route add default dev tun0",
       teardownScript: "Teardown Script (runs before TinyTun stops)",
       teardownScriptPlaceholder: "# Script to remove routes when TinyTun stops\n# e.g. ip route del default dev tun0",
-    }
+    },
+    processExclude: {
+      title: "TinyTun Custom Process Exclusion",
+      warning: "Warning: incorrect process names may bypass traffic unexpectedly. Add only trusted process names.",
+      listLabel: "Excluded Process Names",
+      placeholder: "v2raya\nv2ray\nchrome.exe",
+      hint: "Supports comma or newline separators. Values are deduplicated when saved.",
+    },
   }
 };

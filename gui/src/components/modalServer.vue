@@ -373,7 +373,6 @@ ref="v2ray_key" v-model="v2ray.key" :placeholder="$t('configureServer.password')
           <b-field :label="$t('setting.nodeBackend')" label-position="on-border">
             <b-select v-model="ss.backend" expanded>
               <option value="">{{ $t("setting.options.backendSystemDefault") }}</option>
-              <option value="daeuniverse">{{ $t("setting.options.backendDaeuniverse") }}</option>
               <option value="v2ray">{{ $t("setting.options.backendV2ray") }}</option>
             </b-select>
           </b-field>
@@ -546,7 +545,6 @@ ref="v2ray_key" v-model="v2ray.key" :placeholder="$t('configureServer.password')
           <b-field :label="$t('setting.nodeBackend')" label-position="on-border">
             <b-select v-model="trojan.backend" expanded>
               <option value="">{{ $t("setting.options.backendSystemDefault") }}</option>
-              <option value="daeuniverse">{{ $t("setting.options.backendDaeuniverse") }}</option>
               <option value="v2ray">{{ $t("setting.options.backendV2ray") }}</option>
             </b-select>
           </b-field>
