@@ -10,7 +10,6 @@ import (
 
 	"github.com/v2rayA/v2rayA/conf"
 	"github.com/v2rayA/v2rayA/pkg/util/log"
-	_ "modernc.org/sqlite"
 )
 
 var (
@@ -24,6 +23,13 @@ var (
 // ErrNeedMigration is returned when an old BoltDB database is detected,
 // indicating that migration to SQLite is required before normal operation.
 var ErrNeedMigration = errors.New("bolt.db exists, migration required")
+
+func validateSQLiteDriver() error {
+	if sqliteDriverName == "" {
+		return errors.New("mipsle build requires CGO_ENABLED=1 to enable sqlite driver")
+	}
+	return nil
+}
 
 // SetReadOnly sets the database to read-only mode.
 // In read-only mode, a temporary copy of the database is created.
@@ -59,7 +65,10 @@ func initDB() {
 	}
 
 	var err error
-	sqlDB, err = sql.Open("sqlite", dbPath)
+	if err = validateSQLiteDriver(); err != nil {
+		log.Fatal("SQLite driver is unavailable: %v", err)
+	}
+	sqlDB, err = sql.Open(sqliteDriverName, dbPath)
 	if err != nil {
 		log.Fatal("sql.Open: %v", err)
 	}

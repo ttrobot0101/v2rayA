@@ -1,0 +1,7 @@
+//go:build mipsle && cgo
+
+package db
+
+import _ "github.com/mattn/go-sqlite3"
+
+const sqliteDriverName = "sqlite3"

@@ -10,7 +10,6 @@ import (
 	"github.com/v2rayA/v2rayA/conf"
 	"github.com/v2rayA/v2rayA/pkg/util/log"
 	"go.etcd.io/bbolt"
-	_ "modernc.org/sqlite"
 )
 
 // MigrateFromBoltDB migrates data from BoltDB to SQLite.
@@ -118,7 +117,11 @@ func createSQLiteDB(dbPath string) (*sql.DB, error) {
 	}
 	f.Close()
 
-	db, err := sql.Open("sqlite", dbPath)
+	if err := validateSQLiteDriver(); err != nil {
+		return nil, err
+	}
+
+	db, err := sql.Open(sqliteDriverName, dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
 	}
