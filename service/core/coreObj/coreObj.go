@@ -164,8 +164,10 @@ type Headers struct {
 	Host string `json:"Host"`
 }
 type WsSettings struct {
-	Path    string  `json:"path"`
-	Headers Headers `json:"headers"`
+	Path                string  `json:"path"`
+	Headers             Headers `json:"headers"`
+	MaxEarlyData        int     `json:"maxEarlyData,omitempty"`
+	EarlyDataHeaderName string  `json:"earlyDataHeaderName,omitempty"`
 }
 type StreamSettings struct {
 	Network         string           `json:"network,omitempty"`
@@ -191,7 +193,12 @@ type RealitySettings struct {
 	SpiderX     string `json:"spiderX,omitempty"`
 }
 type GrpcSettings struct {
-	ServiceName string `json:"serviceName"`
+	ServiceName          string `json:"serviceName"`
+	MultiMode            bool   `json:"multiMode,omitempty"`
+	IdleTimeout          int    `json:"idle_timeout,omitempty"`
+	HealthCheckTimeout   int    `json:"health_check_timeout,omitempty"`
+	PermitWithoutStream  bool   `json:"permit_without_stream,omitempty"`
+	InitialWindowsSize   int    `json:"initial_windows_size,omitempty"`
 }
 type Sockopt struct {
 	Mark        *int    `json:"mark,omitempty"`
@@ -286,6 +293,25 @@ type XHTTPSettings struct {
 	Host string `json:"host,omitempty"`
 	Mode string `json:"mode,omitempty"`
 }
+// WireGuard 出站配置
+type WireGuardSettings struct {
+	SecretKey  string          `json:"secretKey"`
+	Address    []string        `json:"address"`
+	Workers    int             `json:"workers,omitempty"`
+	Mtu        int             `json:"mtu,omitempty"`
+	Reserved   []int           `json:"reserved,omitempty"`
+	Peers      []WireGuardPeer `json:"peers"`
+	KernelMode bool            `json:"kernelMode,omitempty"`
+}
+
+type WireGuardPeer struct {
+	Endpoint     string   `json:"endpoint"`
+	PublicKey    string   `json:"publicKey"`
+	PreSharedKey string   `json:"preSharedKey,omitempty"`
+	AllowedIPs   []string `json:"allowedIPs"`
+	KeepAlive    int      `json:"keepAlive,omitempty"`
+}
+
 type Hosts map[string][]string
 
 type DNS struct {
