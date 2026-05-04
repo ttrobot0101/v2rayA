@@ -26,7 +26,7 @@ var ErrNeedMigration = errors.New("bolt.db exists, migration required")
 
 func validateSQLiteDriver() error {
 	if sqliteDriverName == "" {
-		return errors.New("mips-family build requires CGO_ENABLED=1 to enable sqlite driver")
+		return errors.New("mips/loong64 build requires CGO_ENABLED=1 to enable sqlite driver")
 	}
 	return nil
 }

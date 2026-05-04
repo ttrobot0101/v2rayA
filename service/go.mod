@@ -26,7 +26,7 @@ require (
 	github.com/v2rayA/beego/v2 v2.0.7
 	github.com/v2rayA/v2rayA-lib4 v0.0.0-20230812094818-595f87cb2a49
 	github.com/vearutop/statigz v1.1.7
-	go.etcd.io/bbolt v1.3.6
+	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.41.0
 	golang.org/x/net v0.43.0
 	golang.org/x/sys v0.35.0
