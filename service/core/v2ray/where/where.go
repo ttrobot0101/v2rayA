@@ -14,10 +14,52 @@ import (
 	"github.com/v2rayA/v2rayA/conf"
 )
 
+// CoreVersionMismatchError is returned when the core version does not match the expected version.
+var CoreVersionMismatchError = fmt.Errorf("core version mismatch")
+
+// CheckCoreVersion checks whether the core binary at corePath reports a version
+// that exactly matches expectedVersion. If not, it returns CoreVersionMismatchError
+// with details about the actual vs expected version.
+func CheckCoreVersion(corePath string, expectedVersion string) error {
+	cmd := exec.Command(corePath, "version")
+	output := bytes.NewBuffer(nil)
+	cmd.Stdout = output
+	cmd.Stderr = output
+	go func() {
+		time.Sleep(5 * time.Second)
+		p := cmd.Process
+		if p != nil {
+			_ = p.Kill()
+		}
+	}()
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to execute %s --version: %w", corePath, err)
+	}
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("failed to wait for %s --version: %w", corePath, err)
+	}
+
+	fields := strings.Fields(strings.TrimSpace(output.String()))
+	if len(fields) < 2 {
+		return fmt.Errorf("cannot parse version output from %s: %q", corePath, output.String())
+	}
+
+	// fields[0] is the binary name (e.g. "v2raya_core"), fields[1] is the version string.
+	actualVersion := fields[1]
+	// Strip leading 'v' if present for comparison
+	actualVer := strings.TrimPrefix(actualVersion, "v")
+	expectedVer := strings.TrimPrefix(expectedVersion, "v")
+
+	if actualVer != expectedVer {
+		return fmt.Errorf("%w: core version %q does not match v2raya version %q", CoreVersionMismatchError, actualVersion, expectedVersion)
+	}
+	return nil
+}
+
 type Variant string
 
 const (
-	Unknown    Variant = "Unknown"
+	Unknown Variant = "Unknown"
 	// V2rayaCore is the merged v2raya-core binary (xray-core + MultiObservatory).
 	// Binary name: v2raya_core
 	V2rayaCore Variant = "V2rayaCore"
