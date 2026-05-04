@@ -218,8 +218,6 @@ func getConfigFormat() string {
 func startXray() (core.Server, error) {
 	configFiles := getConfigFilePath(true)
 
-	// config, err := core.LoadConfig(getConfigFormat(), configFiles[0], configFiles)
-
 	c, err := core.LoadConfig(getConfigFormat(), configFiles)
 	if err != nil {
 		return nil, errors.New("failed to load config files: [", configFiles.String(), "]").Base(err)
