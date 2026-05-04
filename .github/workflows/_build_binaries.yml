@@ -72,8 +72,7 @@ jobs:
           gcc-mips-linux-gnu \
           gcc-mipsel-linux-gnu \
           gcc-mips64-linux-gnuabi64 \
-          gcc-mips64el-linux-gnuabi64 \
-          gcc-loongarch64-linux-gnu
+          gcc-mips64el-linux-gnuabi64 
     - name: Build v2rayA Binary
       id: build_binary
       shell: bash
@@ -105,10 +104,6 @@ jobs:
             mips64le)
               cgo_enabled=1
               cc="mips64el-linux-gnuabi64-gcc"
-              ;;
-            loong64)
-              cgo_enabled=1
-              cc="loongarch64-linux-gnu-gcc"
               ;;
           esac
         fi
