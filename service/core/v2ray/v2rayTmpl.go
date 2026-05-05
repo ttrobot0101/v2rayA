@@ -1229,6 +1229,26 @@ func (t *Template) setInbound(setting *configure.Setting) error {
 			t.Inbounds = append(t.Inbounds[:i], t.Inbounds[i+1:]...)
 		}
 	}
+	// Append user-defined custom inbounds (SOCKS / HTTP only)
+	listenAddrForCustom := "127.0.0.1"
+	if t.Setting != nil && t.Setting.PortSharing {
+		listenAddrForCustom = "0.0.0.0"
+	}
+	for _, ci := range configure.GetCustomInbounds() {
+		if ci.Port <= 0 || (ci.Protocol != "socks" && ci.Protocol != "http") {
+			continue
+		}
+		ib := coreObj.Inbound{
+			Port:     ci.Port,
+			Protocol: ci.Protocol,
+			Listen:   listenAddrForCustom,
+			Tag:      ci.Tag,
+		}
+		if ci.Protocol == "socks" {
+			ib.Settings = &coreObj.InboundSettings{UDP: true}
+		}
+		t.Inbounds = append(t.Inbounds, ib)
+	}
 	if IsTransparentOn(t.Setting) {
 		switch t.Setting.TransparentType {
 		case configure.TransparentTproxy, configure.TransparentRedirect:
