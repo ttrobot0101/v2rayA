@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/v2rayA/v2rayA/core/coreObj"
-	"github.com/v2rayA/v2rayA/core/v2ray/where"
 )
 
 func init() {
@@ -23,20 +22,21 @@ func init() {
 }
 
 type Trojan struct {
-	Name          string `json:"name"`
-	Server        string `json:"server"`
-	Port          int    `json:"port"`
-	Password      string `json:"password"`
-	Sni           string `json:"sni"`
-	Type          string `json:"type"`
-	Encryption    string `json:"encryption"`
-	Host          string `json:"host"`
-	Path          string `json:"path"`
-	ServiceName   string `json:"serviceName"`
-	AllowInsecure bool   `json:"allowInsecure"`
-	Alpn          string `json:"alpn,omitempty"`
-	Protocol      string `json:"protocol"`
-	Backend       string `json:"backend,omitempty"` // "" (follow system), "daeuniverse", "v2ray"
+	Name                 string `json:"name"`
+	Server               string `json:"server"`
+	Port                 int    `json:"port"`
+	Password             string `json:"password"`
+	Sni                  string `json:"sni"`
+	Type                 string `json:"type"`
+	Encryption           string `json:"encryption"`
+	Host                 string `json:"host"`
+	Path                 string `json:"path"`
+	ServiceName          string `json:"serviceName"`
+	Alpn                 string `json:"alpn,omitempty"`
+	PinnedPeerCertSha256 string `json:"pinnedPeerCertSha256,omitempty"`
+	VerifyPeerCertByName string `json:"verifyPeerCertByName,omitempty"`
+	Protocol             string `json:"protocol"`
+	Backend              string `json:"backend,omitempty"` // "" (follow system), "daeuniverse", "v2ray"
 }
 
 func NewTrojan(link string) (ServerObj, error) {
@@ -50,7 +50,6 @@ func ParseTrojanURL(u string) (data *Trojan, err error) {
 		err = fmt.Errorf("invalid trojan format")
 		return
 	}
-	allowInsecure := t.Query().Get("allowInsecure")
 	sni := t.Query().Get("peer")
 	if sni == "" {
 		sni = t.Query().Get("sni")
@@ -64,18 +63,19 @@ func ParseTrojanURL(u string) (data *Trojan, err error) {
 		return nil, ErrInvalidParameter
 	}
 	data = &Trojan{
-		Name:          t.Fragment,
-		Server:        t.Hostname(),
-		Port:          port,
-		Password:      t.User.Username(),
-		Sni:           sni,
-		Alpn:          t.Query().Get("alpn"),
-		Type:          t.Query().Get("type"),
-		Path:          t.Query().Get("path"),
-		ServiceName:   t.Query().Get("serviceName"),
-		AllowInsecure: allowInsecure == "1" || allowInsecure == "true",
-		Protocol:      "trojan",
-		Backend:       t.Query().Get("v2raya-backend"),
+		Name:                 t.Fragment,
+		Server:               t.Hostname(),
+		Port:                 port,
+		Password:             t.User.Username(),
+		Sni:                  sni,
+		Alpn:                 t.Query().Get("alpn"),
+		Type:                 t.Query().Get("type"),
+		Path:                 t.Query().Get("path"),
+		ServiceName:          t.Query().Get("serviceName"),
+		PinnedPeerCertSha256: t.Query().Get("pinnedPeerCertSha256"),
+		VerifyPeerCertByName: t.Query().Get("verifyPeerCertByName"),
+		Protocol:             "trojan",
+		Backend:              t.Query().Get("v2raya-backend"),
 	}
 	if t.Scheme == "trojan-go" {
 		data.Protocol = "trojan-go"
@@ -84,7 +84,6 @@ func ParseTrojanURL(u string) (data *Trojan, err error) {
 		data.Path = t.Query().Get("path")
 		data.ServiceName = t.Query().Get("serviceName")
 		data.Type = t.Query().Get("type")
-		data.AllowInsecure = false
 	}
 	return data, nil
 }
@@ -100,8 +99,9 @@ func (t *Trojan) ConfigurationMC(info PriorInfo) (c Configuration, err error) {
 		Password: t.Password,
 	}
 	tlsSettings := &coreObj.TLSSettings{
-		ServerName:    t.Sni,
-		AllowInsecure: t.AllowInsecure,
+		ServerName:           t.Sni,
+		PinnedPeerCertSha256: t.PinnedPeerCertSha256,
+		VerifyPeerCertByName: t.VerifyPeerCertByName,
 	}
 	if t.Alpn != "" {
 		tlsSettings.Alpn = strings.Split(t.Alpn, ",")
@@ -137,14 +137,17 @@ func (t *Trojan) ConfigurationMC(info PriorInfo) (c Configuration, err error) {
 }
 
 func (t *Trojan) ConfigurationMT(info PriorInfo) (c Configuration, err error) {
-	return t.ConfigurationMC(info)
+	c, err = t.ConfigurationMC(info)
+	if err != nil {
+		return c, err
+	}
+	// Xray core supports UDP over Trojan
+	c.UDPSupport = true
+	return c, nil
 }
 
 func (t *Trojan) Configuration(info PriorInfo) (c Configuration, err error) {
-	if info.Variant == where.Xray {
-		return t.ConfigurationMT(info)
-	}
-	return t.ConfigurationMC(info)
+	return t.ConfigurationMT(info)
 }
 
 func (t *Trojan) ExportToURL() string {
@@ -176,9 +179,8 @@ func (t *Trojan) ExportToURL() string {
 		setValue(&query, "serviceName", t.ServiceName)
 	}
 
-	if t.AllowInsecure {
-		query.Set("allowInsecure", "1")
-	}
+	setValue(&query, "pinnedPeerCertSha256", t.PinnedPeerCertSha256)
+	setValue(&query, "verifyPeerCertByName", t.VerifyPeerCertByName)
 	setValue(&query, "sni", t.Sni)
 
 	if t.Protocol == "trojan-go" {
