@@ -364,8 +364,13 @@ export default {
 </script>
 
 <style scoped>
+/* 60rem is 960px at the 16px root font and never wider than the wrapper
+   Buefy sizes (max-width 960px). At 65rem, on any viewport wider than 1400px
+   (a 200% display scaling or a zoomed-out window reaches that), the card ran
+   80px past the wrapper and the close button, which sits on the wrapper
+   corner, ended up in the middle of the header. */
 .log-modal {
-  width: 65rem;
+  width: 60rem;
   max-width: 95vw;
 }
 
@@ -589,9 +594,11 @@ export default {
   overflow-x: hidden;
 }
 
+// The log area gives way to the footer: at 50vh a short window pushed the
+// filters and the export button below the fold, and only a scrollbar hinted
+// that they existed. The subtraction is the dialog chrome plus the footer.
 .log-scroller {
-  height: 50vh;
-  max-height: 600px;
+  height: clamp(140px, calc(100vh - 360px), 600px);
 
   .vue-recycle-scroller__item-wrapper {
     overflow-x: auto;
@@ -600,15 +607,13 @@ export default {
 
 @media screen and (max-width: 768px) {
   .log-scroller {
-    height: 40vh;
-    max-height: 400px;
+    height: clamp(140px, calc(100vh - 420px), 400px);
   }
 }
 
 @media screen and (max-width: 480px) {
   .log-scroller {
-    height: 35vh;
-    max-height: 300px;
+    height: clamp(120px, calc(100vh - 480px), 300px);
   }
 }
 

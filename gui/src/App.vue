@@ -2,11 +2,12 @@
   <div id="app">
     <b-navbar ref="navs" fixed-top shadow type="is-light">
       <template slot="brand">
-        <b-navbar-item href="/">
-          <img src="@/assets/img/logo2.png" alt="v2rayA" class="logo no-select" />
+        <b-navbar-item href="/" class="brand no-select">
+          <img src="@/assets/img/v2raya-icon.svg" alt="" class="brand__icon" />
+          <span class="brand__name">v2rayA</span>
         </b-navbar-item>
         <b-navbar-item tag="div">
-          <b-tag id="statusTag" class="pointerTag" role="button" tabindex="0" :type="statusMap[runningState.running]"
+          <b-tag id="statusTag" class="pointerTag" role="button" tabindex="0" :type="statusType"
             @mouseenter.native="handleOnStatusMouseEnter" @mouseleave.native="handleOnStatusMouseLeave"
             @click.native="handleClickStatus" @keydown.native.enter.prevent="handleClickStatus"
             @keydown.native.space.prevent="handleClickStatus"><span class="tag-text">{{ coverStatusText ? coverStatusText : runningState.running }}</span>
@@ -128,12 +129,6 @@ export default {
       loginModalActive: false,
       loginModalFirst: false,
       showSidebar: true,
-      statusMap: {
-        [this.$t("common.checkRunning")]: "is-light",
-        [this.$t("common.notRunning")]: "is-danger",
-        [this.$t("common.isRunning")]: "is-success",
-        [this.$t("common.waitingNetwork")]: "is-warning",
-      },
       coverStatusText: "",
       runningState: {
         running: this.$t("common.checkRunning"),
@@ -164,6 +159,22 @@ export default {
     };
   },
   computed: {
+    // The label is a translated string, and this used to be a map built once
+    // in data() with the then-current translations as its keys: after a
+    // language change no key matched any more and the tag lost its colour.
+    // A computed re-reads both sides together.
+    statusType() {
+      switch (this.runningState.running) {
+        case this.$t("common.isRunning"):
+          return "is-success";
+        case this.$t("common.notRunning"):
+          return "is-danger";
+        case this.$t("common.waitingNetwork"):
+          return "is-warning";
+        default:
+          return "is-light";
+      }
+    },
     username() {
       let token = localStorage["token"];
       if (!token) {
@@ -745,10 +756,27 @@ export default {
   padding: 20px;
 }
 
-.logo {
-  min-height: 2.5rem;
-  margin-left: 1em;
-  margin-right: 1em;
+// The brand is the vector icon plus the name as text: the old PNG wordmark
+// needed a colour filter for the dark theme and blurred at 2x displays.
+.brand {
+  gap: 0.55em;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.brand__icon {
+  height: 30px;
+  width: 30px;
+  min-height: 30px;
+  max-height: none;
+  flex: 0 0 30px;
+}
+
+.brand__name {
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+  color: inherit;
 }
 
 .navbar-item .lucide {
@@ -786,21 +814,23 @@ html {
 // which made the status tags ~10px and the logo ~32px; size the brand row
 // in px so it stays a touch target.
 @media screen and (max-width: 768px) {
-  .navbar-brand .logo {
-    height: 34px;
-    min-height: 34px;
-    margin-left: 0.5em;
-    margin-right: 0.5em;
+  .navbar-brand .brand {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
   }
 
-  // very narrow phones: the two tags and the burger come first; the
-  // wordmark shrinks, then goes
+  .navbar-brand .brand__icon {
+    height: 28px;
+    width: 28px;
+    min-height: 28px;
+    flex-basis: 28px;
+  }
+
+  // very narrow phones: the two tags and the burger come first; the name
+  // goes, then the icon
   @media screen and (max-width: 380px) {
-    .navbar-brand .logo {
-      height: 26px;
-      min-height: 26px;
-      margin-left: 0.25em;
-      margin-right: 0.25em;
+    .navbar-brand .brand__name {
+      display: none;
     }
   }
 

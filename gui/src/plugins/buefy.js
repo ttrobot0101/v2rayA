@@ -2,7 +2,9 @@ import Vue from "vue";
 import Buefy from "buefy";
 import { ConfigProgrammatic } from "buefy";
 import "@/assets/scss/buefy.scss";
-import "lucide-static/font/lucide.css";
+// the icon font, subset at build time to the names used in src/ (see
+// build/lucide-subset.mjs); an unknown name fails the build
+import "virtual:lucide-icons.css";
 
 Vue.use(Buefy);
 ConfigProgrammatic.setOptions({
