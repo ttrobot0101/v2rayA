@@ -1,0 +1,34 @@
+#!/sbin/openrc-run
+# Copyright 2021 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="v2rayA"
+description="A web GUI client of Project V with transparent proxy"
+command="/usr/bin/v2raya"
+command_args="${V2RAYA_OPTS}"
+error_log="/var/log/v2raya/error.log"
+pidfile="/run/${RC_SVCNAME}.pid"
+command_background="yes"
+rc_ulimit="-n 30000"
+rc_cgroup_cleanup="yes"
+# The service stops its core and removes the transparent-proxy rules on
+# SIGTERM; give it time before OpenRC escalates, or the rules stay behind.
+retry="TERM/30/KILL/5"
+
+depend() {
+	need net
+	use dns firewall
+	after net firewall nftables iptables
+}
+
+start_pre() {
+	checkpath -d -m 0755 /var/log/v2raya
+	checkpath -d -m 0750 /etc/v2raya
+}
+
+stop_post() {
+	# A core the service did not get to stop (it was killed) would keep the
+	# inbound ports and make the next start fail on them.
+	pkill -x v2raya_core 2>/dev/null
+	return 0
+}

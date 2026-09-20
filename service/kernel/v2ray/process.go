@@ -54,6 +54,14 @@ func NewProcess(tmpl *Template,
 			process.rollback(rollbackStage)
 		}
 	}()
+	// The template's API producers were started with it; a start that
+	// fails before the process owns them must stop them, or each failed
+	// start leaves a goroutine polling a port nothing listens on.
+	defer func() {
+		if err != nil {
+			_ = tmpl.Close()
+		}
+	}()
 
 	// DNS 模块由 v2raya-core 进程内启动（基于 dns_module 配置段），
 	// v2rayA 仅负责生成配置和在透明代理时应用防火墙规则。
@@ -82,11 +90,6 @@ func NewProcess(tmpl *Template,
 			cancel()
 		}
 	}()
-	defer func() {
-		if err != nil {
-			_ = tmpl.Close()
-		}
-	}()
 	if tmpl.API == nil {
 		log.Fatal("unexpected tmpl.API == nil")
 	}
@@ -107,7 +110,7 @@ func NewProcess(tmpl *Template,
 		return nil, err
 	}
 	process.proc = proc
-	var unexpectedExiting bool
+	var unexpectedExiting atomic.Bool
 	go func() {
 		defer close(process.done)
 		p, e := proc.Wait()
@@ -127,7 +130,7 @@ func NewProcess(tmpl *Template,
 			t = append(t, e.Error())
 		}
 		log.Warn("v2ray-core: %v", strings.Join(t, ": "))
-		unexpectedExiting = true
+		unexpectedExiting.Store(true)
 	}()
 	// ports to check
 	portList := []string{strconv.Itoa(tmpl.ApiPort)}
@@ -141,7 +144,7 @@ func NewProcess(tmpl *Template,
 			i++
 			continue
 		}
-		if unexpectedExiting {
+		if unexpectedExiting.Load() {
 			return nil, common.Coded("CORE_START_FAILED", fmt.Errorf("v2raya_core exited right after starting; the reason is in the v2rayA log"), map[string]interface{}{"detail": "v2raya_core exited right after starting; the reason is in the v2rayA log"})
 		}
 		if time.Since(startTime) > startTimeOut {
@@ -160,6 +163,9 @@ type logInfoWriter struct {
 }
 
 func (w logInfoWriter) Write(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
 	s := string(p)
 	// trim the ending \n
 	length := len(s)
@@ -200,9 +206,6 @@ func (p *Process) Close() error {
 		if err != nil {
 			return err
 		}
-	} else {
-		_, err := p.proc.Wait()
-		return err
 	}
 	return nil
 }
@@ -324,9 +327,9 @@ func getConnectedServerObjs() ([]serverObj.ServerObj, []serverInfo, error) {
 		return nil, nil, nil
 	}
 	serverInfos := make([]serverInfo, 0, css.Len())
-	serverObjs := make([]serverObj.ServerObj, 0, css.Len())
+	loc := configure.NewLocator()
 	for _, cs := range css.Get() {
-		sr, err := cs.LocateServerRaw()
+		sr, err := loc.Locate(cs)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -334,9 +337,39 @@ func getConnectedServerObjs() ([]serverObj.ServerObj, []serverInfo, error) {
 			Info:         sr.ServerObj,
 			OutboundName: cs.Outbound,
 		})
-		serverObjs = append(serverObjs, sr.ServerObj)
+	}
+	serverInfos = applySelection(serverInfos, func(outbound string) string {
+		return configure.GetOutboundSetting(outbound).Selected
+	})
+	serverObjs := make([]serverObj.ServerObj, 0, len(serverInfos))
+	for _, info := range serverInfos {
+		serverObjs = append(serverObjs, info.Info)
 	}
 	return serverObjs, serverInfos, nil
+}
+
+// applySelection keeps, for a group whose setting selects one member, only
+// that member; a selection matching no member leaves the group balanced.
+func applySelection(serverInfos []serverInfo, selectedOf func(outbound string) string) []serverInfo {
+	selected := make(map[string]string)
+	matched := make(map[string]bool)
+	for _, info := range serverInfos {
+		if _, ok := selected[info.OutboundName]; !ok {
+			selected[info.OutboundName] = selectedOf(info.OutboundName)
+		}
+		link := selected[info.OutboundName]
+		if link != "" && info.Info.ExportToURL() == link {
+			matched[info.OutboundName] = true
+		}
+	}
+	kept := serverInfos[:0]
+	for _, info := range serverInfos {
+		if matched[info.OutboundName] && info.Info.ExportToURL() != selected[info.OutboundName] {
+			continue
+		}
+		kept = append(kept, info)
+	}
+	return kept
 }
 
 func NewTemplateFromConnectedServers(setting *configure.Setting) (tmpl *Template, err error) {

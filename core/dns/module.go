@@ -37,6 +37,10 @@ func NewDnsModule(config *DnsModuleConfig) *DnsModule {
 	if config == nil {
 		config = DefaultDnsModuleConfig()
 	}
+	// Bind the egress interface before any dialer exists: every socket the
+	// module opens, including one a caller creates before Start, must leave
+	// through the physical interface once a TUN holds the default route.
+	SetEgressInterface(config.EgressInterface)
 	return &DnsModule{
 		config: config,
 		stats: DnsStats{
@@ -182,26 +186,7 @@ func (m *DnsModule) Start() error {
 		}
 	}
 
-	// Determine default upstream: the LAST non-bootstrap upstream.
-	// Convention: the first upstreams have domain-specific rules,
-	// and the LAST upstream (with empty domain) is the fallback.
-	defaultUpstream := ""
-	for _, u := range m.config.Upstreams {
-		if !u.Bootstrap {
-			defaultUpstream = u.ID
-			if defaultUpstream == "" {
-				defaultUpstream = u.Addr
-			}
-			// Continue iterating — the LAST non-bootstrap upstream wins.
-		}
-	}
-	if defaultUpstream == "" && len(m.config.Upstreams) > 0 {
-		u := m.config.Upstreams[len(m.config.Upstreams)-1]
-		defaultUpstream = u.ID
-		if defaultUpstream == "" {
-			defaultUpstream = u.Addr
-		}
-	}
+	defaultUpstream := selectDefaultUpstream(m.config)
 
 	// Create the Router.
 	router, err := NewRouter(rules, m.config.Upstreams, defaultUpstream)
@@ -228,6 +213,30 @@ func (m *DnsModule) Start() error {
 	m.healthy = true
 	log.Printf("[dns module] started successfully: %s", m.config.String())
 	return nil
+}
+
+func selectDefaultUpstream(config *DnsModuleConfig) string {
+	if config.DefaultUpstream != "" {
+		return config.DefaultUpstream
+	}
+	defaultUpstream := ""
+	for _, u := range config.Upstreams {
+		if !u.Bootstrap {
+			defaultUpstream = u.ID
+			if defaultUpstream == "" {
+				defaultUpstream = u.Addr
+			}
+			// Continue iterating — the LAST non-bootstrap upstream wins.
+		}
+	}
+	if defaultUpstream == "" && len(config.Upstreams) > 0 {
+		u := config.Upstreams[len(config.Upstreams)-1]
+		defaultUpstream = u.ID
+		if defaultUpstream == "" {
+			defaultUpstream = u.Addr
+		}
+	}
+	return defaultUpstream
 }
 
 // resolveBootstrap resolves a list of domain names using the system DNS.
@@ -401,6 +410,7 @@ func isOwnAddress(ap netip.AddrPort) bool {
 func (m *DnsModule) Stop() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	SetEgressInterface("")
 
 	if !m.healthy {
 		return nil // Already stopped.

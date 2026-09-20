@@ -3,6 +3,7 @@ package v2ray
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -78,9 +79,11 @@ const HijackFlag = "# v2rayA DNS hijack"
 const (
 	symlinkMarker = "# v2rayA saved symlink: "
 	missingMarker = "# v2rayA: no resolv.conf"
+	emptyMarker   = "# v2rayA: empty resolv.conf"
 )
 
 var hijacker *ResolvHijacker
+var hijackerMu sync.Mutex
 
 // HijackResolv 将 /etc/resolv.conf 的 nameserver 设置为 127.2.0.17。
 // 当新 DNS 模块启用时，127.2.0.17:53 的流量被 iptables 规则重定向到 :52353（新 DNS 模块端口）。
@@ -123,7 +126,7 @@ func backupResolv() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Record that there was no file at all.
-			return os.WriteFile(resolvBackupPath, []byte(missingMarker+"\n"), 0644)
+			return writeResolvBackup([]byte(missingMarker + "\n"))
 		}
 		return fmt.Errorf("cannot inspect %v: %w", resolvPath, err)
 	}
@@ -132,7 +135,7 @@ func backupResolv() error {
 		if err != nil {
 			return fmt.Errorf("cannot read the %v link: %w", resolvPath, err)
 		}
-		return os.WriteFile(resolvBackupPath, []byte(symlinkMarker+target+"\n"), 0644)
+		return writeResolvBackup([]byte(symlinkMarker + target + "\n"))
 	}
 	b, err := os.ReadFile(resolvPath)
 	if err != nil {
@@ -143,7 +146,37 @@ func backupResolv() error {
 		// looking for the real backup instead of saving our own work.
 		return nil
 	}
-	return os.WriteFile(resolvBackupPath, b, 0644)
+	if len(b) == 0 {
+		// an empty original is legitimate; an empty backup is what a
+		// crash mid-write leaves, so the two must not look alike
+		return writeResolvBackup([]byte(emptyMarker + "\n"))
+	}
+	return writeResolvBackup(b)
+}
+
+func writeResolvBackup(content []byte) (err error) {
+	temp, err := os.CreateTemp(filepath.Dir(resolvBackupPath), "."+filepath.Base(resolvBackupPath)+".*")
+	if err != nil {
+		return err
+	}
+	tempPath := temp.Name()
+	defer func() {
+		_ = temp.Close()
+		_ = os.Remove(tempPath)
+	}()
+	if err = temp.Chmod(0644); err != nil {
+		return err
+	}
+	if _, err = temp.Write(content); err != nil {
+		return err
+	}
+	if err = temp.Sync(); err != nil {
+		return err
+	}
+	if err = temp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tempPath, resolvBackupPath)
 }
 
 // restoreResolv puts back what backupResolv saved. It reports whether the
@@ -151,6 +184,13 @@ func backupResolv() error {
 func restoreResolv() bool {
 	b, err := os.ReadFile(resolvBackupPath)
 	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Warn("DNS hijack: cannot read backup %v: %v", resolvBackupPath, err)
+		}
+		return false
+	}
+	if len(b) == 0 {
+		log.Warn("DNS hijack: backup %v is empty", resolvBackupPath)
 		return false
 	}
 	content := string(b)
@@ -168,6 +208,13 @@ func restoreResolv() bool {
 			log.Warn("DNS hijack: cannot restore the %v link to %v: %v", resolvPath, target, err)
 			return false
 		}
+	case strings.HasPrefix(strings.TrimSpace(content), emptyMarker):
+		if err := os.WriteFile(resolvPath, nil, 0644); err != nil {
+			log.Warn("DNS hijack: cannot restore an empty %v: %v", resolvPath, err)
+			return false
+		}
+		_ = os.Remove(resolvBackupPath)
+		return true
 	case strings.HasPrefix(strings.TrimSpace(content), missingMarker):
 		if err := os.Remove(resolvPath); err != nil && !os.IsNotExist(err) {
 			log.Warn("DNS hijack: cannot remove %v: %v", resolvPath, err)
@@ -187,6 +234,8 @@ func resetResolvHijacker() {
 	if runtime.GOOS != "linux" {
 		return
 	}
+	hijackerMu.Lock()
+	defer hijackerMu.Unlock()
 	if hijacker != nil {
 		hijacker.Close()
 	}
@@ -197,6 +246,8 @@ func removeResolvHijacker() {
 	if runtime.GOOS != "linux" {
 		return
 	}
+	hijackerMu.Lock()
+	defer hijackerMu.Unlock()
 	if hijacker != nil {
 		hijacker.Close()
 		if hijacker.localDNS && !restoreResolv() {

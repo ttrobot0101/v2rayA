@@ -17,7 +17,7 @@ func HttpGetUsingSpecificClient(c *http.Client, url string) (resp *http.Response
 	//shadowrocket会有可能不清楚alterid的情况，影响aead是否启用的问题
 	req.Header.Set("User-Agent", fmt.Sprintf("v2rayA/%v WebRequestHelper", conf.Version))
 	if resp, err = c.Do(req); err != nil {
-		resp, err = http.DefaultClient.Do(req)
+		return nil, fmt.Errorf("could not fetch through the selected proxy mode (%w); set the mode to direct or start the core", err)
 	}
 	if resp == nil {
 		cause := err
