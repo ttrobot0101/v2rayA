@@ -48,6 +48,7 @@ beforeEach(() => {
   vi.mocked(getSetting).mockResolvedValue({
     setting: { ...loaded },
     localGFWListVersion: "2026-09-15",
+    localGeositeVersion: "",
   });
   vi.mocked(getRemoteGFWListVersion).mockResolvedValue({
     remoteGFWListVersion: "2026-09-15",
@@ -155,7 +156,7 @@ describe("settings list", () => {
     await about!.trigger("click");
     await flushPromises();
     const dialog = new DOMWrapper(document.querySelector('[role="dialog"]')!);
-    expect(dialog.text()).toContain("mzz2017 / v2rayA");
+    expect(dialog.text()).toContain("Founded by @mzz2017");
     expect(dialog.find('a[href$="/discussions"]').exists()).toBe(true);
     const close = dialog
       .findAll("button")
@@ -163,5 +164,21 @@ describe("settings list", () => {
     await close!.trigger("click");
     await flushPromises();
     expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  test("shows the standard GeoSite date without treating it as a GFWList version", async () => {
+    vi.mocked(getSetting).mockResolvedValue({
+      setting: { ...loaded },
+      localGFWListVersion: "",
+      localGeositeVersion: "2026-09-16",
+    });
+    vi.mocked(getRemoteGFWListVersion).mockResolvedValue({
+      remoteGFWListVersion: "2026-09-15",
+    });
+    await mountPage();
+    expect(wrapper.text()).toContain("Local: 2026-09-16 (geosite)");
+    expect(wrapper.text()).not.toContain(
+      "Based on modified time of file which sometimes is after latest version online.",
+    );
   });
 });

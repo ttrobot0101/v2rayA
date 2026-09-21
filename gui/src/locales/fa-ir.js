@@ -54,6 +54,12 @@ export default {
     removeFromGroup: "حذف از گروه",
     selectAll: "انتخاب همه",
     autoUpdate: "به‌روزرسانی خودکار",
+    noSubscriptions: "هنوز اشتراکی وجود ندارد",
+    noSubscriptionsHint:
+      "نشانی اشتراک را وارد کنید؛ گره‌های آن این‌جا کنار هم نگه داشته و دستی یا زمان‌بندی‌شده به‌روز می‌شوند.",
+    importSubscription: "وارد کردن اشتراک",
+    emptyHint:
+      "پیوند اشتراک‌گذاری یا نشانی اشتراک را وارد کنید یا گره را دستی بسازید.",
     deleteSubscriptionNodes: "گره‌های اشتراک را نمی‌توان جداگانه حذف کرد.",
   },
   dashboard: {
@@ -92,6 +98,7 @@ export default {
     outboundSetting: "تنظیمات گروه پروکسی",
     setting: "تنظیمات",
     about: "درباره",
+    docs: "مستندات",
     loggedAs: "واردشده با حساب کاربری {username}",
     checkRunning: "در حال بررسی",
     isRunning: "در حال اجرا",
@@ -219,7 +226,6 @@ export default {
     concurrency: "هم‌زمانی",
     inboundSniffing: "شنود ترافیک ورودی",
     tunExcludeProcesses: "فرایندهای مستثنا از TUN",
-    nodeBackend: "پشت‌صحنه",
     tcpFastOpen: "TCP Fast Open",
     saved: "تنظیمات ذخیره و اعمال شد",
     saveFailed: "ذخیره تنظیمات ناموفق بود: {message}",
@@ -244,8 +250,6 @@ export default {
       updateGfwlistAtIntervals: "به‌روزرسانی منظم GFWList (واحد: ساعت)",
       dependTransparentMode: "پیروی از پروکسی شفاف/پروکسی سیستم",
       leastPing: "ابتدا کمترین تأخیر",
-      backendV2ray: "v2ray / xray",
-      backendSystemDefault: "پیش‌فرض سیستم",
       systemProxy: "پروکسی سیستم",
       tunUnsupported: "در این سکو پشتیبانی نمی‌شود",
     },
@@ -272,7 +276,7 @@ export default {
       ssPluginImpl:
         "★پیش‌فرض: برای simple-obfs، «transport» و برای v2ray-plugin، «chained» است." +
         "★chained: ترافیک shadowsocks به افزونه مستقل هدایت می‌شود." +
-        "★transport: ترافیک مستقیماً توسط لایه انتقال هسته v2ray/xray پردازش می‌شود.",
+        "★transport: ترافیک مستقیماً توسط لایه انتقال هسته پردازش می‌شود.",
     },
   },
   customAddressPort: {
@@ -298,12 +302,11 @@ export default {
   },
   dns: {
     title: "تنظیمات DNS",
-    help: "راهنمای DNS",
-    helpTooltip: "مشاهده مستندات DNS در v2fly",
     colServer: "سرور DNS",
     colDomains: "فهرست دامنه‌ها",
     colOutbound: "خروجی",
-    serverPlaceholder: "برای نمونه 8.8.8.8 یا https://dns.google/dns-query",
+    serverPlaceholder:
+      "برای نمونه 8.8.8.8، tls://dns.google یا https://dns.google/dns-query",
     domainsPlaceholder:
       "هر مورد در یک خط؛ برای نمونه geosite:cn\nبرای DNS جایگزین خالی بگذارید",
     addRule: "افزودن قانون",
@@ -418,17 +421,21 @@ export default {
   },
   version: {
     v2rayInvalid:
-      "ممکن است geosite.dat، geoip.dat یا v2ray-core به‌درستی نصب نشده باشد",
+      "ممکن است geosite.dat، geoip.dat یا v2raya_core به‌درستی نصب نشده باشد",
     coreVersionMismatch:
       "ناسازگاری نسخه هسته: نسخه v2raya_core باید دقیقاً با نسخه v2rayA یکسان باشد. {err}",
   },
   about: {
-    intro: "v2rayA یک رابط وب برای V2Ray است.",
-    local: "همه داده‌ها به‌صورت محلی و نه در فضای ابری ذخیره می‌شوند.",
+    intro:
+      "یک رابط وب با هستهٔ اختصاصی مبتنی بر Xray و پراکسی شفاف سراسری در Linux، Windows و macOS.",
+    protocols:
+      "از پیوندهای VMess، VLESS، Shadowsocks، Trojan، Hysteria2، TUIC، Juicity، AnyTLS، WireGuard، SOCKS5 و HTTP(S) پشتیبانی می‌کند.",
+    founded: "بنیان‌گذار: {'@'}mzz2017.",
+    local:
+      "همهٔ داده‌ها روی همین دستگاه می‌مانند و به هیچ سرویس ابری فرستاده نمی‌شوند.",
     report:
       "مشکلات مشاهده‌شده هنگام استفاده را می‌توانید در {discussions} گزارش کنید.",
     discussions: "discussions",
-    docs: "مستندات:",
   },
   axios: {
     messages: {
@@ -440,11 +447,50 @@ export default {
         "ارتباط برقرار نشد. Firefox اجازه دسترسی سایت‌های https به منابع http را نمی‌دهد؛ می‌توانید به سایت‌های http جایگزین بروید.",
       ],
     },
-    urls: {
-      usage: "https://github.com/v2rayA/v2rayA/wiki/Usage",
+  },
+  docs: {
+    fallback: "این بخش هنوز ترجمه نشده است؛ متن انگلیسی نمایش داده می‌شود.",
+    sections: {
+      "quick-start": "شروع سریع",
+      "transparent-proxy": "پروکسی شفاف",
+      routing: "قوانین مسیریابی",
+      inbounds: "ورودی‌ها و اشتراک‌گذاری",
+      parameters: "گزینه‌ها و متغیرهای محیطی",
+      troubleshooting: "عیب‌یابی",
+    },
+    params: {
+      flag: "گزینه",
+      env: "متغیر محیطی",
+      default: "پیش‌فرض",
+      desc: "توضیح",
     },
   },
   routingA: {
+    title: "قوانین RoutingA",
+    templates: {
+      title: "الگوها",
+      full: "مجموعهٔ کامل قوانین، جایگزین قوانین فعلی",
+      add: "افزودن قوانین، درج در محل مکان‌نما",
+      whitelist: "چین مستقیم، بقیه از پروکسی",
+      blacklist: "سایت‌های خارج از چین از پروکسی، بقیه مستقیم",
+      global: "همه از پروکسی، شبکهٔ محلی مستقیم",
+      minimal: "فقط سرویس‌های خارجی رایج از پروکسی، بقیه مستقیم",
+      ads: "مسدود کردن دامنه‌های تبلیغاتی",
+      streaming:
+        "پخش ویدئو و موسیقی از پروکسی (Netflix، Disney، HBO، Prime Video، YouTube، Spotify، TikTok)",
+      social: "شبکه‌های اجتماعی از پروکسی",
+      telegram: "Telegram از پروکسی",
+      ai: "سرویس‌های هوش مصنوعی از پروکسی",
+      dev: "سرویس‌های توسعه‌دهندگان از پروکسی (GitHub، GitLab، Docker، npm، JetBrains، Hugging Face)",
+      cnServices:
+        "سرویس‌های چینی Apple، Google، Microsoft، Steam و Bilibili مستقیم",
+      appleMicrosoft: "Apple و Microsoft مستقیم",
+      games: "پلتفرم‌های بازی مستقیم",
+      speedtest: "تست سرعت مستقیم",
+      lan: "شبکهٔ محلی و آدرس‌های خصوصی مستقیم",
+      bittorrent: "BitTorrent مستقیم (نیاز به Sniffing)",
+      quic: "مسدود کردن QUIC (UDP 443)",
+    },
     export: "برون‌بری",
     import: {
       title: "درون‌ریزی",
@@ -480,12 +526,13 @@ export default {
       actions: "عملیات ورودی",
       raw: "نحو ناشناخته؛ متن اصلی در ویرایشگر متنی حفظ می‌شود.",
     },
-    editor: "قوانین RoutingA",
     loading: "در حال بارگذاری قوانین",
     resetDefault: "بازگردانی پیش‌فرض",
     resetConfirm: "قوانین فعلی با الگوی پیش‌فرض جایگزین شوند؟",
     discard: "تغییرات ذخیره‌نشده کنار گذاشته شوند؟",
     insert: "درج",
+    replace: "جایگزینی همهٔ قوانین",
+    replaceConfirm: "قوانین فعلی با این الگو جایگزین شوند؟",
     lineError: "خط {line}: {message}",
     errors: {
       noArrow: "شرط باید با -> و یک خروجی دنبال شود.",
@@ -518,11 +565,6 @@ export default {
         title: "خروجی‌ها",
         description:
           "خروجی‌های داخلی proxy، direct و block هستند؛ default خروجی هنگام نبود تطبیق را تعیین می‌کند. می‌توانید خروجی SOCKS یا HTTP نام‌دار با user و pass اختیاری تعریف کنید.",
-      },
-      examples: {
-        title: "نمونه‌ها",
-        description:
-          "الگوی پیش‌فرض یا قانونی برای مسدود کردن دامنه‌های فهرست تبلیغات درج کنید.",
       },
     },
     messages: ["برای دریافت راهنمایی، روی دکمه «Help&Manual» کلیک کنید"],
@@ -588,7 +630,7 @@ export default {
   tproxyWhiteIpGroups: {
     title: "گروه‌های IP سفید",
     messages: [
-      "گروه IP انتخاب‌شده از هسته XRay/V2Ray عبور نمی‌کند و مستقیماً به خروجی می‌رود (از طریق Nftables/Iptables). مطمئن شوید سرور DNS شما قابل اعتماد و عاری از آلودگی است تا کلاینت‌ها بتوانند IPهای صحیح را resolve کنند.",
+      "گروه IP انتخاب‌شده از هسته عبور نمی‌کند و مستقیماً به خروجی می‌رود (از طریق Nftables/Iptables). مطمئن شوید سرور DNS شما قابل اعتماد و عاری از آلودگی است تا کلاینت‌ها بتوانند IPهای صحیح را resolve کنند.",
       "بهتر است زمانی از این قابلیت استفاده کنید که سیستم شما از Nftables استفاده می‌کند، زیرا iptables هنگام افزودن تعداد زیادی IP ممکن است با مشکلات کارایی روبه‌رو شود.",
     ],
     formName1: "برای انتخاب چند مورد، Ctrl را نگه دارید.",
@@ -612,6 +654,7 @@ export default {
     saveFailed: "ذخیره دامنه‌های مستثنا ناموفق بود: {message}",
   },
   gfwList: {
+    geosite: "{date} (geosite)",
     title: "به‌روزرسانی GFWList",
     messages: [
       "اگر دسترسی به GitHub در محیط فعلی شما دشوار است، می‌توانید جدیدترین GFWList (geosite.dat) را از GitHub (https://github.com/v2rayA/dist-v2ray-rules-dat) بارگیری کنید، آن را در سرور خود بارگذاری کنید و سپس نشانی سرور را در اینجا برای بارگیری وارد کنید.",
@@ -646,7 +689,7 @@ export default {
       warning:
         "هشدار: نام‌های نادرست فرایند ممکن است ناخواسته باعث عبور ترافیک شوند. فقط نام فرایندهای مورد اعتماد را اضافه کنید.",
       listLabel: "نام فرایندهای مستثنا",
-      placeholder: "v2raya, v2ray, chrome.exe",
+      placeholder: "v2raya, v2raya_core, chrome.exe",
       hint: "جداکننده‌های ویرگول یا خط جدید پشتیبانی می‌شوند. هنگام ذخیره، مقادیر تکراری حذف می‌شوند.",
     },
   },
@@ -659,7 +702,7 @@ export default {
     tagPlaceholder: "برای نمونه my-socks",
     portPlaceholder: "برای نمونه 10800",
     empty: "هیچ ورودی سفارشی وجود ندارد",
-    hint: "فقط پروتکل‌های SOCKS و HTTP پشتیبانی می‌شوند. برچسب باید یکتا باشد و به‌عنوان برچسب هسته v2ray استفاده خواهد شد.",
+    hint: "فقط پروتکل‌های SOCKS و HTTP پشتیبانی می‌شوند. برچسب باید یکتا باشد و به‌عنوان برچسب خروجی هسته استفاده خواهد شد.",
     fillAll: "برچسب و پورت الزامی هستند",
     deleteConfirm: "ورودی {tag} حذف شود؟",
     outbound: "گروه خروجی متصل",

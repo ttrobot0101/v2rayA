@@ -52,6 +52,10 @@ export default {
     removeFromGroup: "移出分组",
     selectAll: "全选",
     autoUpdate: "自动更新",
+    noSubscriptions: "还没有订阅",
+    noSubscriptionsHint: "导入订阅地址后，它的节点归在这里，可手动或定时更新。",
+    importSubscription: "导入订阅",
+    emptyHint: "导入分享链接或订阅地址，也可以手动新建节点。",
     deleteSubscriptionNodes: "无法单独删除订阅中的节点。",
   },
   dashboard: {
@@ -90,6 +94,7 @@ export default {
     outboundSetting: "代理分组设置",
     setting: "设置",
     about: "关于",
+    docs: "文档",
     loggedAs: "已登录为 {username}",
     checkRunning: "检测中",
     isRunning: "正在运行",
@@ -207,16 +212,15 @@ export default {
     pacMode: "规则端口的分流模式",
     mux: "多路复用",
     autoUpdateSub: "自动更新订阅",
-    autoUpdateGfwlist: "自动更新GFWList",
+    autoUpdateGfwlist: "自动更新 GFWList",
     preferModeWhenUpdate: "解析订阅链接/更新时优先使用",
     tproxyExcludedInterfaces: "排除的网卡名前缀",
     tproxyExcludedInterfacesPlaceholder: "docker*、veth*、wg*、ppp*、br-*",
     tunAutoRoute: "自动路由",
-    ipForwardOn: "开启IP转发",
+    ipForwardOn: "开启 IP 转发",
     portSharingOn: "允许局域网的连接",
     concurrency: "最大并发数",
     tunExcludeProcesses: "TUN 自定义排除进程",
-    nodeBackend: "后端",
     tcpFastOpen: "TCP Fast Open",
     saved: "设置已保存并应用",
     saveFailed: "无法保存设置：{message}",
@@ -237,12 +241,10 @@ export default {
       off: "关闭",
       updateSubWhenStart: "服务端启动时更新订阅",
       updateSubAtIntervals: "每隔一段时间更新订阅（单位：小时）",
-      updateGfwlistWhenStart: "服务端启动时更新GFWList",
-      updateGfwlistAtIntervals: "每隔一段时间更新GFWList（单位：小时）",
+      updateGfwlistWhenStart: "服务端启动时更新 GFWList",
+      updateGfwlistAtIntervals: "每隔一段时间更新 GFWList（单位：小时）",
       dependTransparentMode: "跟随透明代理/系统代理",
       leastPing: "最小时延优先",
-      backendV2ray: "v2ray / xray",
-      backendSystemDefault: "跟随系统设置",
       systemProxy: "系统代理",
       tunUnsupported: "此平台不支持",
     },
@@ -268,7 +270,7 @@ export default {
       ssPluginImpl:
         "★默认：使用 simple-obfs 时为等效传输层，v2ray-plugin 时为链式。" +
         "★链式：shadowsocks 流量会被转发至独立的插件。" +
-        "★等效传输层：直接由 v2ray/xray 核心的传输层处理。",
+        "★等效传输层：直接由内核的传输层处理。",
     },
   },
   customAddressPort: {
@@ -293,12 +295,11 @@ export default {
   },
   dns: {
     title: "DNS 设置",
-    help: "DNS 帮助",
-    helpTooltip: "查看 v2fly DNS 文档",
     colServer: "DNS 服务器",
     colDomains: "域名列表",
     colOutbound: "出口",
-    serverPlaceholder: "如 8.8.8.8 或 https://dns.google/dns-query",
+    serverPlaceholder:
+      "如 8.8.8.8、tls://dns.google 或 https://dns.google/dns-query",
     domainsPlaceholder: "每行一个，如 geosite:cn\n留空表示兜底 DNS",
     addRule: "添加规则",
     rule: "规则 {n}",
@@ -411,16 +412,19 @@ export default {
   },
   version: {
     v2rayInvalid:
-      "检测到 geosite.dat, geoip.dat 文件或 v2ray-core 可能未正确安装，请检查",
+      "检测到 geosite.dat、geoip.dat 文件或 v2raya_core 可能未正确安装，请检查",
     coreVersionMismatch:
       "核心版本不匹配：v2raya_core 的版本必须与 v2rayA 版本完全一致。{err}",
   },
   about: {
-    intro: "v2rayA 是 V2Ray 的一个 Web 客户端。",
+    intro:
+      "自带 Xray 内核的 Web 客户端，在 Linux、Windows、macOS 上提供全局透明代理。",
+    protocols:
+      "支持 VMess、VLESS、Shadowsocks、Trojan、Hysteria2、TUIC、Juicity、AnyTLS、WireGuard、SOCKS5 与 HTTP(S) 代理节点。",
+    founded: "由 {'@'}mzz2017 创立。",
     local: "所有数据均存储在本地，不上传云端。",
     report: "在使用中如果发现任何问题，欢迎到{discussions}反馈。",
     discussions: "讨论区",
-    docs: "文档：",
   },
   axios: {
     messages: {
@@ -431,11 +435,49 @@ export default {
         "无法通信。火狐浏览器不允许https站点访问http资源，您可以换用Chrome浏览器或切换为http备用站点。",
       ],
     },
-    urls: {
-      usage: "https://v2raya.org/",
+  },
+  docs: {
+    fallback: "本节尚未翻译，显示英文内容。",
+    sections: {
+      "quick-start": "快速开始",
+      "transparent-proxy": "透明代理",
+      routing: "分流规则",
+      inbounds: "入站与共享",
+      parameters: "启动参数与环境变量",
+      troubleshooting: "故障排除",
+    },
+    params: {
+      flag: "参数",
+      env: "环境变量",
+      default: "默认值",
+      desc: "说明",
     },
   },
   routingA: {
+    title: "RoutingA 分流规则",
+    templates: {
+      title: "模板",
+      full: "整套规则，替换当前规则",
+      add: "追加规则，插入到光标处",
+      whitelist: "国内直连，其余走代理",
+      blacklist: "国外站点走代理，其余直连",
+      global: "全部走代理，仅局域网直连",
+      minimal: "只让常用海外服务走代理，其余直连",
+      ads: "拦截广告域名",
+      streaming:
+        "流媒体走代理（Netflix、Disney、HBO、Prime Video、YouTube、Spotify、TikTok）",
+      social: "社交媒体走代理",
+      telegram: "Telegram 走代理",
+      ai: "AI 服务走代理",
+      dev: "开发者服务走代理（GitHub、GitLab、Docker、npm、JetBrains、Hugging Face）",
+      cnServices: "Apple、Google、Microsoft、Steam 的国内服务与 Bilibili 直连",
+      appleMicrosoft: "Apple 与 Microsoft 直连",
+      games: "游戏平台直连",
+      speedtest: "测速站点直连",
+      lan: "局域网与私有地址直连",
+      bittorrent: "BT 下载直连（需要开启嗅探）",
+      quic: "拦截 QUIC（UDP 443）",
+    },
     export: "导出",
     import: {
       title: "导入",
@@ -470,12 +512,13 @@ export default {
       actions: "条目操作",
       raw: "无法识别此语法，已在文本编辑器中保留原文。",
     },
-    editor: "RoutingA 规则",
     loading: "正在加载规则",
     resetDefault: "恢复默认",
     resetConfirm: "将当前规则替换为默认模板？",
     discard: "放弃修改？",
     insert: "插入",
+    replace: "替换全部规则",
+    replaceConfirm: "将当前规则替换为此模板？",
     lineError: "第 {line} 行：{message}",
     errors: {
       noArrow: "规则需要包含条件、-> 和出口。",
@@ -483,7 +526,7 @@ export default {
       noOutbound: "-> 后缺少出口。",
     },
     reference: {
-      title: "语法",
+      title: "语法参考",
       format: {
         title: "规则格式",
         description:
@@ -508,10 +551,6 @@ export default {
         title: "出口",
         description:
           "内置出口为 proxy、direct 和 block，default 指定未匹配规则时的出口。可定义命名的 SOCKS 或 HTTP 出口，user 和 pass 为可选认证参数。",
-      },
-      examples: {
-        title: "示例",
-        description: "插入默认模板，或插入拦截广告列表中域名的规则。",
       },
     },
     messages: ["点击“查看帮助”按钮以获取帮助"],
@@ -578,7 +617,7 @@ export default {
   tproxyWhiteIpGroups: {
     title: "直通白名单IP组",
     messages: [
-      "选中的IP组将会不经过XRay/V2Ray核心直接出站（通过Nftables/Iptables直接转发），请确保你的DNS服务器足够可靠无污染能使客户端能解析到正确的IP",
+      "选中的 IP 组将不经过内核直接出站（通过Nftables/Iptables直接转发），请确保你的DNS服务器足够可靠无污染能使客户端能解析到正确的IP",
       "最好系统使用Nftables时使用此功能，Iptables可能在添加大量IP时存在性能问题",
     ],
     formName1: "按住Ctrl可以多选",
@@ -601,7 +640,8 @@ export default {
     saveFailed: "无法保存排除域名：{message}",
   },
   gfwList: {
-    title: "更新GFWList",
+    geosite: "{date}（geosite）",
+    title: "更新 GFWList",
     messages: [
       "如果当前环境访问Github困难，你可以从此处（https://github.com/v2rayA/dist-v2ray-rules-dat）手动下载最新GFWList（geosite.dat），上传到你的服务器，然后填写你的服务器链接进行下载",
       "如果不填写自定义下载链接输入框则自动从Github进行下载",
@@ -634,7 +674,7 @@ export default {
       warning:
         "警告：错误的进程名可能导致流量被意外直通。请仅添加你确认需要排除的进程。",
       listLabel: "排除进程名称",
-      placeholder: "v2raya, v2ray, chrome.exe",
+      placeholder: "v2raya, v2raya_core, chrome.exe",
       hint: "支持逗号或换行分隔。保存时会自动去重。",
     },
   },
@@ -647,7 +687,7 @@ export default {
     tagPlaceholder: "如 my-socks",
     portPlaceholder: "如 10800",
     empty: "暂无自定义入站",
-    hint: "入站端口仅支持 SOCKS 和 HTTP 协议，标签必须唯一，将作为 v2ray core 的 tag 使用。",
+    hint: "入站端口仅支持 SOCKS 和 HTTP 协议，标签必须唯一，将作为内核出站的 tag 使用。",
     fillAll: "请填写标签和端口",
     deleteConfirm: "确认删除入站 {tag}？",
     outbound: "绑定出口组",

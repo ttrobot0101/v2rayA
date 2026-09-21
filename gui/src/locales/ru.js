@@ -54,6 +54,12 @@ export default {
     removeFromGroup: "Удалить из группы",
     selectAll: "Выбрать все",
     autoUpdate: "Автообновление",
+    noSubscriptions: "Подписок пока нет",
+    noSubscriptionsHint:
+      "Импортируйте адрес подписки: её узлы будут храниться здесь и обновляться вручную или по расписанию.",
+    importSubscription: "Импортировать подписку",
+    emptyHint:
+      "Импортируйте ссылку или адрес подписки либо создайте узел вручную.",
     deleteSubscriptionNodes: "Узлы подписки нельзя удалять по отдельности.",
   },
   dashboard: {
@@ -93,6 +99,7 @@ export default {
     outboundSetting: "Настройка группы прокси",
     setting: "Настройки",
     about: "О программе",
+    docs: "Документация",
     loggedAs: "Выполнен вход как {username}",
     checkRunning: "Проверка",
     isRunning: "Работает",
@@ -221,7 +228,6 @@ export default {
     concurrency: "Параллелизм",
     inboundSniffing: "Анализ входящего трафика",
     tunExcludeProcesses: "Процессы, исключаемые из TUN",
-    nodeBackend: "Бэкенд",
     tcpFastOpen: "TCP Fast Open",
     saved: "Настройки сохранены и применены",
     saveFailed: "Не удалось сохранить настройки: {message}",
@@ -247,8 +253,6 @@ export default {
       updateGfwlistAtIntervals: "Регулярно обновлять GFWList (единица: час)",
       dependTransparentMode: "Следовать режиму прозрачного/системного прокси",
       leastPing: "Сначала узлы с наименьшей задержкой",
-      backendV2ray: "v2ray / xray",
-      backendSystemDefault: "Системное значение по умолчанию",
       systemProxy: "Системный прокси",
       tunUnsupported: "не поддерживается на этой платформе",
     },
@@ -275,7 +279,7 @@ export default {
       ssPluginImpl:
         "★по умолчанию: 'transport' для simple-obfs, 'chained' для v2ray-plugin." +
         "★chained: трафик shadowsocks перенаправляется в отдельный плагин." +
-        "★transport: обрабатывается непосредственно транспортным уровнем ядра v2ray/xray.",
+        "★transport: обрабатывается непосредственно транспортным уровнем ядра.",
     },
   },
   customAddressPort: {
@@ -301,12 +305,11 @@ export default {
   },
   dns: {
     title: "Настройки DNS",
-    help: "Справка по DNS",
-    helpTooltip: "Просмотреть документацию v2fly по DNS",
     colServer: "DNS-сервер",
     colDomains: "Список доменов",
     colOutbound: "Исходящий трафик",
-    serverPlaceholder: "например, 8.8.8.8 или https://dns.google/dns-query",
+    serverPlaceholder:
+      "например, 8.8.8.8, tls://dns.google или https://dns.google/dns-query",
     domainsPlaceholder:
       "По одному в строке, например geosite:cn\nОставьте пустым для резервного DNS",
     addRule: "Добавить правило",
@@ -423,17 +426,20 @@ export default {
   },
   version: {
     v2rayInvalid:
-      "geosite.dat, geoip.dat или v2ray-core могут быть установлены некорректно",
+      "geosite.dat, geoip.dat или v2raya_core могут быть установлены некорректно",
     coreVersionMismatch:
       "Несовпадение версий ядра: версия v2raya_core должна в точности совпадать с версией v2rayA. {err}",
   },
   about: {
-    intro: "v2rayA — веб-клиент с графическим интерфейсом для V2Ray.",
-    local: "Все данные хранятся локально, а не в облаке.",
+    intro:
+      "Веб-клиент для собственного ядра на базе Xray с глобальным прозрачным прокси в Linux, Windows и macOS.",
+    protocols:
+      "Поддерживает ссылки VMess, VLESS, Shadowsocks, Trojan, Hysteria2, TUIC, Juicity, AnyTLS, WireGuard, SOCKS5 и HTTP(S).",
+    founded: "Основатель проекта — {'@'}mzz2017.",
+    local: "Все данные хранятся локально и никуда не отправляются.",
     report:
       "О проблемах, обнаруженных при использовании, можно сообщить в разделе {discussions}.",
     discussions: "discussions",
-    docs: "Документация:",
   },
   axios: {
     messages: {
@@ -445,11 +451,51 @@ export default {
         "Не удаётся установить связь. Firefox не разрешает сайтам HTTPS обращаться к ресурсам HTTP. Попробуйте перейти на альтернативные сайты HTTP.",
       ],
     },
-    urls: {
-      usage: "https://github.com/v2rayA/v2rayA/wiki/Usage",
+  },
+  docs: {
+    fallback: "Этот раздел ещё не переведён; показан английский текст.",
+    sections: {
+      "quick-start": "Быстрый старт",
+      "transparent-proxy": "Прозрачный прокси",
+      routing: "Правила маршрутизации",
+      inbounds: "Входящие и общий доступ",
+      parameters: "Флаги и переменные окружения",
+      troubleshooting: "Устранение неполадок",
+    },
+    params: {
+      flag: "Флаг",
+      env: "Переменная окружения",
+      default: "По умолчанию",
+      desc: "Описание",
     },
   },
   routingA: {
+    title: "Правила RoutingA",
+    templates: {
+      title: "Шаблоны",
+      full: "Полный набор правил, заменяет текущие",
+      add: "Добавить правила, вставляются у курсора",
+      whitelist: "Китай напрямую, остальное через прокси",
+      blacklist: "Сайты за пределами Китая через прокси, остальное напрямую",
+      global: "Всё через прокси, локальная сеть напрямую",
+      minimal:
+        "Только распространённые зарубежные сервисы через прокси, остальное напрямую",
+      ads: "Блокировать рекламные домены",
+      streaming:
+        "Стриминг через прокси (Netflix, Disney, HBO, Prime Video, YouTube, Spotify, TikTok)",
+      social: "Социальные сети через прокси",
+      telegram: "Telegram через прокси",
+      ai: "Сервисы ИИ через прокси",
+      dev: "Сервисы для разработчиков через прокси (GitHub, GitLab, Docker, npm, JetBrains, Hugging Face)",
+      cnServices:
+        "Китайские зеркала Apple, Google, Microsoft, Steam и Bilibili напрямую",
+      appleMicrosoft: "Apple и Microsoft напрямую",
+      games: "Игровые платформы напрямую",
+      speedtest: "Тесты скорости напрямую",
+      lan: "Локальная сеть и частные адреса напрямую",
+      bittorrent: "BitTorrent напрямую (нужен Sniffing)",
+      quic: "Блокировать QUIC (UDP 443)",
+    },
     export: "Экспорт",
     import: {
       title: "Импорт",
@@ -486,12 +532,13 @@ export default {
       actions: "Действия с записью",
       raw: "Неизвестный синтаксис; сохранён в текстовом редакторе.",
     },
-    editor: "Правила RoutingA",
     loading: "Загрузка правил",
     resetDefault: "Восстановить по умолчанию",
     resetConfirm: "Заменить текущие правила шаблоном по умолчанию?",
     discard: "Отменить несохранённые изменения?",
     insert: "Вставить",
+    replace: "Заменить все правила",
+    replaceConfirm: "Заменить текущие правила этим шаблоном?",
     lineError: "Строка {line}: {message}",
     errors: {
       noArrow: "Ожидаются условие, -> и исходящее подключение.",
@@ -524,11 +571,6 @@ export default {
         title: "Исходящие подключения",
         description:
           "Встроенные подключения: proxy, direct и block; default задаёт подключение при отсутствии совпадений. Можно определить именованное подключение SOCKS или HTTP с необязательными user и pass.",
-      },
-      examples: {
-        title: "Примеры",
-        description:
-          "Вставьте шаблон по умолчанию или правило блокировки доменов из рекламного списка.",
       },
     },
     messages: ["Нажмите кнопку «Справка и руководство», чтобы получить помощь"],
@@ -596,7 +638,7 @@ export default {
   tproxyWhiteIpGroups: {
     title: "Группы IP-адресов прямого доступа",
     messages: [
-      "Выбранная группа IP-адресов будет обходить ядро XRay/V2Ray и направляться напрямую на выход через Nftables/Iptables. Убедитесь, что DNS-сервер надёжен и не подвергается загрязнению, чтобы клиенты могли разрешать правильные IP-адреса.",
+      "Выбранная группа IP-адресов будет обходить ядро и направляться напрямую на выход через Nftables/Iptables. Убедитесь, что DNS-сервер надёжен и не подвергается загрязнению, чтобы клиенты могли разрешать правильные IP-адреса.",
       "Рекомендуется использовать эту функцию при работе системы на Nftables, поскольку iptables может испытывать проблемы с производительностью при добавлении большого числа IP-адресов.",
     ],
     formName1: "Удерживайте Ctrl для выбора нескольких элементов.",
@@ -622,6 +664,7 @@ export default {
     saveFailed: "Не удалось сохранить исключённые домены: {message}",
   },
   gfwList: {
+    geosite: "{date} (geosite)",
     title: "Обновить GFWList",
     messages: [
       "Если в вашей среде сложно получить доступ к GitHub, скачайте последнюю версию GFWList（geosite.dat）с GitHub（https://github.com/v2rayA/dist-v2ray-rules-dat）, загрузите её на сервер, а затем введите здесь адрес сервера для скачивания.",
@@ -656,7 +699,7 @@ export default {
       warning:
         "Предупреждение: неправильные имена процессов могут неожиданно направить трафик в обход прокси. Добавляйте только доверенные имена процессов.",
       listLabel: "Имена исключённых процессов",
-      placeholder: "v2raya, v2ray, chrome.exe",
+      placeholder: "v2raya, v2raya_core, chrome.exe",
       hint: "Поддерживаются разделители-запятые и переводы строк. При сохранении значения очищаются от дубликатов.",
     },
   },
@@ -669,7 +712,7 @@ export default {
     tagPlaceholder: "например, my-socks",
     portPlaceholder: "например, 10800",
     empty: "Пользовательские входящие порты отсутствуют",
-    hint: "Поддерживаются только протоколы SOCKS и HTTP. Тег должен быть уникальным и будет использоваться как тег ядра v2ray.",
+    hint: "Поддерживаются только протоколы SOCKS и HTTP. Тег должен быть уникальным и будет использоваться как тег исходящего соединения ядра.",
     fillAll: "Необходимо указать тег и порт",
     deleteConfirm: "Удалить входящий порт {tag}?",
     outbound: "Привязанная группа прокси",

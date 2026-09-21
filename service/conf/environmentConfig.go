@@ -11,6 +11,7 @@ import (
 	"github.com/stevenroose/gonfig"
 	"github.com/v2rayA/v2rayA/common"
 	"github.com/v2rayA/v2rayA/pkg/util/log"
+	"github.com/v2rayA/v2rayA/pkg/util/privilege"
 )
 
 type Params struct {
@@ -24,10 +25,11 @@ type Params struct {
 	V2rayAssetsDirectory string `id:"v2ray-assetsdir" desc:"v2ray-core assets directory for searching and downloading files like geoip.dat. This will override environment V2RAY_LOCATION_ASSET and XRAY_LOCATION_ASSET."`
 	CoreStartupTimeout   int64  `id:"core-startup-timeout" default:"15" desc:"Timeout duration in seconds for starting v2ray or xray core. On devices with lower performance, consider increasing this value."`
 	TransparentHook      string `id:"transparent-hook" desc:"the executable file to run in the transparent proxy life-cycle. v2rayA will pass in the --transparent-type (tproxy, redirect) and --stage (pre-start, post-start, pre-stop, post-stop) arguments."`
-	CoreHook             string `id:"core-hook" desc:"the executable file to run in the v2ray-core life-cycle. v2rayA will pass in the --stage (pre-start, post-start, pre-stop, post-stop) argument."`
-	PluginManager        string `id:"plugin-manager" desc:"the executable file to run in the v2ray-core life-cycle. v2rayA will pass in the --stage (pre-start, post-start, pre-stop, post-stop) argument."`
+	CoreHook             string `id:"core-hook" desc:"the executable that parses and configures nodes of protocols v2rayA does not know. v2rayA runs it with --stage=parse or --stage=configuration, --link and --v2raya-confdir."`
+	PluginManager        string `id:"plugin-manager" desc:"the executable that parses and configures nodes of protocols v2rayA does not know. v2rayA runs it with --stage=parse or --stage=configuration, --link and --v2raya-confdir."`
 	WebDir               string `id:"webdir" desc:"v2rayA web files directory. use embedded files if not specify."`
 	IPV6Support          string `id:"ipv6-support" default:"auto" desc:"Optional values: auto, on, off. Make sure your IPv6 network works fine before you turn it on."`
+	RedirectBoundDevice  bool   `id:"redirect-respect-bound-device" desc:"[Linux Only] In redirect mode, let TCP sockets bound to a device (SO_BINDTODEVICE, as NetworkManager's connectivity checks are) bypass the proxy. Needs kernel 5.14 or later and cgroup v2 at /sys/fs/cgroup."`
 	NftablesSupport      string `id:"nftables-support" default:"auto" desc:"Optional values: auto, on, off. Experimental feature. Make sure you have installed nftables."`
 	PassCheckRoot        bool   `id:"passcheckroot" desc:"Skip privilege checking. Use it only when you cannot start v2raya but confirm you have root privilege"`
 	ResetPassword        bool   `id:"reset-password" ignore:"1"`
@@ -36,7 +38,7 @@ type Params struct {
 	LogMaxDays           int64  `id:"log-max-days" default:"3" desc:"Maximum number of days to keep log files"`
 	LogDisableColor      bool   `id:"log-disable-color" ignore:"1"`
 	LogDisableTimestamp  bool   `id:"log-disable-timestamp" desc:"Intended for use with systemd/journald to avoid duplicate timestamps in logs. This flag is ignored when using the --log-file flag or the V2RAYA_LOG_FILE environment variable." ignore:"1"`
-	Lite                 bool   `id:"lite" desc:"Lite mode for non-root and non-linux users" ignore:"1"`
+	Lite                 bool   `id:"lite" desc:"Lite mode: no transparent proxy, configuration under the user's directory. Implied when not started as root or administrator." ignore:"1"`
 	WinEnvFile           string `id:"win-envfile" desc:"[Windows Only] Path to environment variables file to load before service starts"`
 	ShowVersion          bool   `id:"version" ignore:"1"`
 	PrintReport          string `id:"report" desc:"Print report" ignore:"1"`
@@ -74,6 +76,15 @@ func initFunc() {
 	if params.ShowVersion {
 		fmt.Println(Version)
 		os.Exit(0)
+	}
+	// Started without root or administrator rights, v2rayA is in lite mode
+	// whether or not --lite was given: nothing it could do as root works, and
+	// the configuration directory has to be the user's. A service definition
+	// (brew services, a user unit) can then be one file for both, as root with
+	// the transparent proxy or as the user with the system proxy.
+	if !params.Lite && !params.PassCheckRoot && !privilege.IsRootOrAdmin() {
+		params.Lite = true
+		log.Warn("not running as root or administrator: lite mode, without transparent proxy. If you want tun, start as root or administrator.")
 	}
 	if params.Lite {
 		params.PassCheckRoot = true

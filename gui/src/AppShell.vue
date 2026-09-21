@@ -7,6 +7,7 @@
 // starter resetSession() calls.
 import {
   computed,
+  defineAsyncComponent,
   onBeforeUnmount,
   onMounted,
   ref,
@@ -32,7 +33,6 @@ import type {
   ObservatoryMessage,
   RunningStateMessage,
   TrafficMessage,
-  Which,
   WsMessage,
 } from "@/api/types";
 import { installClientHooks } from "@/clientHooks";
@@ -54,12 +54,13 @@ import NavDrawer from "@/components/NavDrawer.vue";
 import NavRail from "@/components/NavRail.vue";
 import ShellMenus from "@/components/ShellMenus.vue";
 import { destinations } from "@/components/destinations";
+import { isSection } from "@/docs";
 import { languages } from "@/components/languages";
 import LoginDialog from "@/dialogs/Login.vue";
 import OnboardingDialog, {
   shouldShowOnboarding,
 } from "@/dialogs/Onboarding.vue";
-import { onSessionTeardown, resetSession, setSessionStarter } from "@/session";
+import { onSessionTeardown, setSessionStarter } from "@/session";
 import { setRefresher } from "@/session/refresh";
 import { useAppStore, type Running } from "@/stores/app";
 import { runningOf } from "@/views/nodes/model";
@@ -73,6 +74,8 @@ import DashboardView from "@/views/DashboardView.vue";
 import LogsView from "@/views/LogsView.vue";
 import ProxiesView from "@/views/ProxiesView.vue";
 import SettingsView from "@/views/SettingsView.vue";
+// the docs and their Markdown load only when the page is opened
+const DocsView = defineAsyncComponent(() => import("@/views/DocsView.vue"));
 
 const store = useAppStore();
 const { t, locale } = useI18n();
@@ -87,6 +90,9 @@ const compact = computed(() => width.value < 600);
 // Material's window classes: compact < 600 (bottom bar), medium and
 // expanded < 1200 (rail with an app bar), large ≥ 1200 (standard drawer)
 const expanded = computed(() => width.value >= 1200);
+// the drawer folded to the rail, remembered
+const folded = ref(localStorage.getItem("drawer") === "rail");
+watch(folded, (v) => localStorage.setItem("drawer", v ? "rail" : "open"));
 const pageTitle = computed(() =>
   t(destinations.find((d) => d.view === store.view)?.label ?? "common.about"),
 );
@@ -282,12 +288,13 @@ const statusText = computed(() => {
   return labelOf(store.running);
 });
 
-/** every text the status button can carry, for its fixed width */
+/** every text the status button can carry, for its fixed width; the
+ * "waiting for network" label is long and rare, so it widens the button
+ * while it shows instead of reserving its width all the time */
 const statusLabels = computed(() => {
-  const labels = (
-    ["running", "stopped", "paused", "checking"] as Running[]
-  ).map(labelOf);
+  const labels = (["running", "stopped", "checking"] as Running[]).map(labelOf);
   labels.push(t("v2ray.stop"), t("v2ray.start"));
+  if (store.running === "paused") labels.push(labelOf("paused"));
   return [...new Set(labels)];
 });
 
@@ -352,10 +359,8 @@ watchEffect(() => {
   theme.themes.value.dark.colors = schemeColors(store.themeSeed, true);
 });
 watchEffect(() => {
-  theme.global.name.value = store.isDark ? "dark" : "light";
-  // the old components' dark styles key on this class
-  document.documentElement.classList.toggle("theme-dark", store.isDark);
-  document.body.classList.toggle("theme-dark", store.isDark);
+  theme.global.name.value =
+    store.themePreference === "auto" ? "system" : store.themePreference;
 });
 
 watch(
@@ -369,20 +374,32 @@ watch(
   { immediate: true },
 );
 
-const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-const onSystemTheme = (e: MediaQueryListEvent) =>
-  (store.systemDark = e.matches);
+// "#docs" or "#docs/<section>" opens the documentation: the help links in
+// the dialogs and the About page point there, in this tab or a new one.
+function openHash() {
+  const [, page, section = ""] =
+    location.hash.match(/^#(docs)(?:\/([\w-]*))?$/) ?? [];
+  if (page !== "docs") return;
+  store.docsSection = isSection(section) ? section : "";
+  store.view = "docs";
+  history.replaceState(null, "", location.pathname + location.search);
+}
 onMounted(() => {
-  darkQuery.addEventListener("change", onSystemTheme);
+  window.addEventListener("hashchange", openHash);
+  openHash();
   void startSession();
 });
-onBeforeUnmount(() => darkQuery.removeEventListener("change", onSystemTheme));
+onBeforeUnmount(() => window.removeEventListener("hashchange", openHash));
 </script>
 
 <template>
   <v-app>
-    <NavDrawer v-if="expanded" />
-    <NavRail v-else-if="!compact" />
+    <NavDrawer v-if="expanded && !folded" @fold="folded = true" />
+    <NavRail
+      v-else-if="!compact"
+      :foldable="expanded"
+      @unfold="folded = false"
+    />
 
     <v-app-bar
       v-if="!expanded"
@@ -402,6 +419,7 @@ onBeforeUnmount(() => darkQuery.removeEventListener("change", onSystemTheme));
         :prepend-icon="mdiPower"
         height="40"
         class="text-none"
+        :class="compact ? 'me-1' : 'me-2'"
         :disabled="toggling"
         @mouseenter="hovering = true"
         @mouseleave="hovering = false"
@@ -421,7 +439,6 @@ onBeforeUnmount(() => darkQuery.removeEventListener("change", onSystemTheme));
       </v-btn>
       <OutboundMenu
         :variant="compact ? 'icon' : 'chip'"
-        :class="compact ? 'ms-1' : 'mx-2'"
         @changed="pageRef?.sync?.()"
       />
       <template #append>
@@ -467,11 +484,7 @@ onBeforeUnmount(() => darkQuery.removeEventListener("change", onSystemTheme));
             >
               {{ statusText }}
             </v-btn>
-            <OutboundMenu
-              variant="chip"
-              class="me-2"
-              @changed="pageRef?.sync?.()"
-            />
+            <OutboundMenu variant="chip" @changed="pageRef?.sync?.()" />
             <ShellMenus variant="icons" />
           </div>
         </div>
@@ -496,6 +509,7 @@ onBeforeUnmount(() => darkQuery.removeEventListener("change", onSystemTheme));
           ref="pageRef"
           :key="sessionSerial"
         />
+        <DocsView v-else-if="store.view === 'docs'" :key="sessionSerial" />
         <AboutView
           v-else-if="store.view === 'about'"
           ref="pageRef"

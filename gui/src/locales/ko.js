@@ -54,6 +54,11 @@ export default {
     removeFromGroup: "그룹에서 제거",
     selectAll: "전체 선택",
     autoUpdate: "자동 업데이트",
+    noSubscriptions: "아직 구독이 없습니다",
+    noSubscriptionsHint:
+      "구독 주소를 가져오면 해당 노드가 여기에 함께 보관되고 수동 또는 예약으로 업데이트됩니다.",
+    importSubscription: "구독 가져오기",
+    emptyHint: "공유 링크나 구독 주소를 가져오거나 노드를 직접 만드세요.",
     deleteSubscriptionNodes: "구독 노드는 개별적으로 삭제할 수 없습니다.",
   },
   dashboard: {
@@ -92,6 +97,7 @@ export default {
     outboundSetting: "프록시 그룹 설정",
     setting: "설정",
     about: "정보",
+    docs: "문서",
     loggedAs: "로그인 계정: {username}",
     checkRunning: "확인 중",
     isRunning: "실행 중",
@@ -218,7 +224,6 @@ export default {
     concurrency: "동시 실행 수",
     inboundSniffing: "인바운드 스니핑",
     tunExcludeProcesses: "TUN 제외 프로세스",
-    nodeBackend: "백엔드",
     tcpFastOpen: "TCP Fast Open",
     saved: "설정 저장 및 적용됨",
     saveFailed: "설정 저장 실패: {message}",
@@ -243,8 +248,6 @@ export default {
       updateGfwlistAtIntervals: "GFWList를 주기적으로 업데이트 (단위: 시간)",
       dependTransparentMode: "투명 프록시/시스템 프록시를 따름",
       leastPing: "최저 지연 우선",
-      backendV2ray: "v2ray / xray",
-      backendSystemDefault: "시스템 기본값",
       systemProxy: "시스템 프록시",
       tunUnsupported: "이 플랫폼에서는 지원되지 않음",
     },
@@ -273,7 +276,7 @@ export default {
       ssPluginImpl:
         "★기본값: simple-obfs는 'transport', v2ray-plugin은 'chained'입니다. " +
         "★chained: shadowsocks 트래픽을 독립 플러그인으로 전달합니다. " +
-        "★transport: v2ray/xray 코어의 전송 계층이 직접 처리합니다.",
+        "★transport: 코어의 전송 계층이 직접 처리합니다.",
     },
   },
   customAddressPort: {
@@ -298,12 +301,11 @@ export default {
   },
   dns: {
     title: "DNS 설정",
-    help: "DNS 도움말",
-    helpTooltip: "v2fly DNS 문서 보기",
     colServer: "DNS 서버",
     colDomains: "도메인 목록",
     colOutbound: "아웃바운드",
-    serverPlaceholder: "예: 8.8.8.8 또는 https://dns.google/dns-query",
+    serverPlaceholder:
+      "예: 8.8.8.8, tls://dns.google 또는 https://dns.google/dns-query",
     domainsPlaceholder: "한 줄에 하나, 예: geosite:cn\n비우면 폴백 DNS 사용",
     addRule: "규칙 추가",
     rule: "규칙 {n}",
@@ -418,16 +420,19 @@ export default {
   },
   version: {
     v2rayInvalid:
-      "geosite.dat, geoip.dat 또는 v2ray-core가 올바르게 설치되지 않았을 수 있습니다",
+      "geosite.dat, geoip.dat 또는 v2raya_core가 올바르게 설치되지 않았을 수 있습니다",
     coreVersionMismatch:
       "코어 버전 불일치: v2raya_core 버전은 v2rayA 버전과 정확히 일치해야 합니다. {err}",
   },
   about: {
-    intro: "v2rayA는 V2Ray의 웹 GUI 클라이언트입니다.",
-    local: "모든 데이터는 클라우드가 아닌 로컬에 저장됩니다.",
+    intro:
+      "자체 Xray 기반 코어를 사용하는 웹 클라이언트로, Linux, Windows, macOS에서 전역 투명 프록시를 제공합니다.",
+    protocols:
+      "VMess, VLESS, Shadowsocks, Trojan, Hysteria2, TUIC, Juicity, AnyTLS, WireGuard, SOCKS5, HTTP(S) 프록시 링크를 지원합니다.",
+    founded: "{'@'}mzz2017가 시작한 프로젝트입니다.",
+    local: "모든 데이터는 이 컴퓨터에만 저장되며 클라우드로 전송되지 않습니다.",
     report: "사용 중 발견한 문제는 {discussions}에 제보할 수 있습니다.",
     discussions: "discussions",
-    docs: "문서:",
   },
   axios: {
     messages: {
@@ -439,11 +444,50 @@ export default {
         "통신할 수 없습니다. Firefox는 HTTPS 사이트의 HTTP 리소스 접근을 허용하지 않습니다. 대체 HTTP 사이트로 전환해 보세요.",
       ],
     },
-    urls: {
-      usage: "https://github.com/v2rayA/v2rayA/wiki/Usage",
+  },
+  docs: {
+    fallback: "이 섹션은 아직 번역되지 않아 영어로 표시됩니다.",
+    sections: {
+      "quick-start": "빠른 시작",
+      "transparent-proxy": "투명 프록시",
+      routing: "라우팅 규칙",
+      inbounds: "인바운드와 공유",
+      parameters: "플래그와 환경 변수",
+      troubleshooting: "문제 해결",
+    },
+    params: {
+      flag: "플래그",
+      env: "환경 변수",
+      default: "기본값",
+      desc: "설명",
     },
   },
   routingA: {
+    title: "RoutingA 규칙",
+    templates: {
+      title: "템플릿",
+      full: "전체 규칙 세트, 현재 규칙을 바꿈",
+      add: "규칙 추가, 커서 위치에 삽입",
+      whitelist: "중국은 직접 연결, 나머지는 프록시",
+      blacklist: "중국 외 사이트는 프록시, 나머지는 직접 연결",
+      global: "모두 프록시, LAN은 직접 연결",
+      minimal: "자주 쓰는 해외 서비스만 프록시, 나머지는 직접 연결",
+      ads: "광고 도메인 차단",
+      streaming:
+        "스트리밍은 프록시 (Netflix, Disney, HBO, Prime Video, YouTube, Spotify, TikTok)",
+      social: "소셜 미디어는 프록시",
+      telegram: "Telegram은 프록시",
+      ai: "AI 서비스는 프록시",
+      dev: "개발자 서비스는 프록시 (GitHub, GitLab, Docker, npm, JetBrains, Hugging Face)",
+      cnServices:
+        "Apple, Google, Microsoft, Steam의 중국 서비스와 Bilibili는 직접 연결",
+      appleMicrosoft: "Apple과 Microsoft는 직접 연결",
+      games: "게임 플랫폼은 직접 연결",
+      speedtest: "속도 측정은 직접 연결",
+      lan: "LAN 및 사설 주소는 직접 연결",
+      bittorrent: "BitTorrent는 직접 연결 (스니핑 필요)",
+      quic: "QUIC 차단 (UDP 443)",
+    },
     export: "내보내기",
     import: {
       title: "가져오기",
@@ -478,12 +522,13 @@ export default {
       actions: "항목 작업",
       raw: "인식할 수 없는 문법입니다. 텍스트 편집기에 원문을 보존합니다.",
     },
-    editor: "RoutingA 규칙",
     loading: "규칙 불러오는 중",
     resetDefault: "기본값 복원",
     resetConfirm: "현재 규칙을 기본 템플릿으로 바꾸시겠습니까?",
     discard: "저장하지 않은 변경 사항을 버리시겠습니까?",
     insert: "삽입",
+    replace: "모든 규칙 바꾸기",
+    replaceConfirm: "현재 규칙을 이 템플릿으로 바꾸시겠습니까?",
     lineError: "{line}행: {message}",
     errors: {
       noArrow: "조건 뒤에 ->와 아웃바운드가 필요합니다.",
@@ -516,11 +561,6 @@ export default {
         title: "아웃바운드",
         description:
           "기본 아웃바운드는 proxy, direct, block이며 default는 일치하는 규칙이 없을 때 사용할 아웃바운드를 지정합니다. 이름이 있는 SOCKS 또는 HTTP 아웃바운드를 정의하고 user와 pass를 선택적으로 지정할 수 있습니다.",
-      },
-      examples: {
-        title: "예제",
-        description:
-          "기본 템플릿이나 광고 목록의 도메인을 차단하는 규칙을 삽입합니다.",
       },
     },
     messages: ["도움말을 보려면 '도움말 및 설명서' 버튼을 클릭하세요"],
@@ -586,7 +626,7 @@ export default {
   tproxyWhiteIpGroups: {
     title: "화이트리스트 IP 그룹",
     messages: [
-      "선택한 IP 그룹은 XRay/V2Ray 코어를 거치지 않고 Nftables/Iptables를 통해 직접 아웃바운드됩니다. 클라이언트가 올바른 IP를 확인할 수 있도록 DNS 서버가 신뢰할 수 있고 오염되지 않았는지 확인하세요.",
+      "선택한 IP 그룹은 코어를 거치지 않고 Nftables/Iptables를 통해 직접 아웃바운드됩니다. 클라이언트가 올바른 IP를 확인할 수 있도록 DNS 서버가 신뢰할 수 있고 오염되지 않았는지 확인하세요.",
       "시스템에서 Nftables를 사용할 때 이 기능을 사용하는 것이 좋습니다. Iptables는 많은 IP를 추가할 때 성능 문제가 발생할 수 있습니다.",
     ],
     formName1: "Ctrl을 누른 채 여러 항목을 선택할 수 있습니다.",
@@ -610,6 +650,7 @@ export default {
     saveFailed: "제외된 도메인 저장 실패: {message}",
   },
   gfwList: {
+    geosite: "{date} (geosite)",
     title: "GFWList 업데이트",
     messages: [
       "현재 환경에서 GitHub 접근이 어렵다면 GitHub(https://github.com/v2rayA/dist-v2ray-rules-dat)에서 최신 GFWList(geosite.dat)를 다운로드하여 서버에 업로드한 뒤, 여기에 서버 주소를 입력해 다운로드할 수 있습니다.",
@@ -644,7 +685,7 @@ export default {
       warning:
         "경고: 잘못된 프로세스 이름은 트래픽이 예기치 않게 우회될 수 있습니다. 신뢰할 수 있는 프로세스 이름만 추가하세요.",
       listLabel: "제외할 프로세스 이름",
-      placeholder: "v2raya, v2ray, chrome.exe",
+      placeholder: "v2raya, v2raya_core, chrome.exe",
       hint: "쉼표 또는 줄바꿈으로 구분합니다. 저장 시 중복이 제거됩니다.",
     },
   },
@@ -657,7 +698,7 @@ export default {
     tagPlaceholder: "예: my-socks",
     portPlaceholder: "예: 10800",
     empty: "사용자 지정 인바운드 없음",
-    hint: "SOCKS와 HTTP 프로토콜만 지원됩니다. 태그는 고유해야 하며 v2ray 코어 태그로 사용됩니다.",
+    hint: "SOCKS와 HTTP 프로토콜만 지원됩니다. 태그는 고유해야 하며 코어의 아웃바운드 태그로 사용됩니다.",
     fillAll: "태그와 포트를 입력해야 합니다",
     deleteConfirm: "인바운드 {tag}을(를) 삭제하시겠습니까?",
     outbound: "연결된 아웃바운드 그룹",
