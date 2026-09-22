@@ -229,10 +229,8 @@ defineExpose({ sync });
             size="20"
             color="on-surface-variant"
           />
-          <h2 class="md3-title-small flex-grow-1">
-            {{ t("dashboard.inUse") }}
-          </h2>
-          <OutboundMenu variant="chip" />
+          <h2 class="md3-title-small">{{ t("dashboard.proxyGroup") }}</h2>
+          <OutboundMenu variant="chip" @changed="sync" />
         </div>
         <v-skeleton-loader
           v-if="loading"
