@@ -71,7 +71,6 @@ import { runningOf } from "@/views/nodes/model";
 import { vuetifyLocales } from "@/theme";
 import { schemeColors } from "@/theme/scheme";
 import logo from "@/assets/img/v2raya-icon.svg";
-import OutboundMenu from "@/components/OutboundMenu.vue";
 import PortsDialog from "@/dialogs/settings/Ports.vue";
 import AboutView from "@/views/AboutView.vue";
 import DashboardView from "@/views/DashboardView.vue";
@@ -95,6 +94,8 @@ const compact = computed(() => width.value < 600);
 // Material's window classes: compact < 600 (bottom bar), medium and
 // expanded < 1200 (rail with an app bar), large ≥ 1200 (standard drawer)
 const expanded = computed(() => width.value >= 1200);
+// the phone's app bar menu; the docs item closes it, the rest are submenus
+const barMenu = ref(false);
 // the drawer folded to the rail, remembered
 const folded = ref(localStorage.getItem("drawer") === "rail");
 watch(folded, (v) => localStorage.setItem("drawer", v ? "rail" : "open"));
@@ -442,13 +443,9 @@ onBeforeUnmount(() => window.removeEventListener("hashchange", openHash));
           >
         </span>
       </v-btn>
-      <OutboundMenu
-        :variant="compact ? 'icon' : 'chip'"
-        @changed="pageRef?.sync?.()"
-      />
       <template #append>
         <ShellMenus v-if="!compact" variant="icons" />
-        <v-menu v-else :close-on-content-click="false">
+        <v-menu v-else v-model="barMenu" :close-on-content-click="false">
           <template #activator="{ props: menu }">
             <v-btn
               v-bind="menu"
@@ -464,7 +461,10 @@ onBeforeUnmount(() => window.removeEventListener("hashchange", openHash));
               :title="t('common.docs')"
               :active="store.view === 'docs'"
               rounded="xl"
-              @click="store.view = 'docs'"
+              @click="
+                store.view = 'docs';
+                barMenu = false;
+              "
             />
             <ShellMenus variant="list" />
           </v-list>
@@ -475,14 +475,7 @@ onBeforeUnmount(() => window.removeEventListener("hashchange", openHash));
     <NavBar v-if="compact" />
 
     <v-main>
-      <div
-        class="page"
-        :class="{
-          'page--wide': ['dashboard', 'proxies', 'subscriptions'].includes(
-            store.view,
-          ),
-        }"
-      >
+      <div class="page">
         <div v-if="expanded" class="page__header">
           <h1 class="md3-headline-medium page__title">{{ pageTitle }}</h1>
           <div class="d-flex align-center ga-2">
@@ -498,42 +491,52 @@ onBeforeUnmount(() => window.removeEventListener("hashchange", openHash));
             >
               {{ statusText }}
             </v-btn>
-            <OutboundMenu variant="chip" @changed="pageRef?.sync?.()" />
             <ShellMenus variant="icons" />
           </div>
         </div>
         <BannerHost />
-        <DashboardView
-          v-if="store.view === 'dashboard'"
-          ref="pageRef"
-          :key="sessionSerial"
-        />
-        <ProxiesView
-          v-else-if="store.view === 'proxies'"
-          ref="pageRef"
-          :key="sessionSerial"
-        />
-        <SubscriptionsView
-          v-else-if="store.view === 'subscriptions'"
-          ref="pageRef"
-          :key="sessionSerial"
-        />
-        <SettingsView
-          v-else-if="store.view === 'settings'"
-          ref="pageRef"
-          :key="sessionSerial"
-        />
-        <LogsView
-          v-else-if="store.view === 'logs'"
-          ref="pageRef"
-          :key="sessionSerial"
-        />
-        <DocsView v-else-if="store.view === 'docs'" :key="sessionSerial" />
-        <AboutView
-          v-else-if="store.view === 'about'"
-          ref="pageRef"
-          :key="sessionSerial"
-        />
+        <div
+          class="page__body"
+          :class="{
+            'page__body--wide': [
+              'dashboard',
+              'proxies',
+              'subscriptions',
+            ].includes(store.view),
+          }"
+        >
+          <DashboardView
+            v-if="store.view === 'dashboard'"
+            ref="pageRef"
+            :key="sessionSerial"
+          />
+          <ProxiesView
+            v-else-if="store.view === 'proxies'"
+            ref="pageRef"
+            :key="sessionSerial"
+          />
+          <SubscriptionsView
+            v-else-if="store.view === 'subscriptions'"
+            ref="pageRef"
+            :key="sessionSerial"
+          />
+          <SettingsView
+            v-else-if="store.view === 'settings'"
+            ref="pageRef"
+            :key="sessionSerial"
+          />
+          <LogsView
+            v-else-if="store.view === 'logs'"
+            ref="pageRef"
+            :key="sessionSerial"
+          />
+          <DocsView v-else-if="store.view === 'docs'" :key="sessionSerial" />
+          <AboutView
+            v-else-if="store.view === 'about'"
+            ref="pageRef"
+            :key="sessionSerial"
+          />
+        </div>
       </div>
     </v-main>
 
@@ -563,14 +566,19 @@ onBeforeUnmount(() => window.removeEventListener("hashchange", openHash));
   font-weight: 500;
   letter-spacing: 0;
 }
-/* Material's margins: 16 dp on compact, 24 dp from medium; readable width */
+/* Material's margins: 16 dp on compact, 24 dp from medium. The page is one
+   width on every view, so the header's buttons stay put when the view
+   changes; the body of a reading view stays at a readable width. */
 .page {
   padding: 16px;
   margin: 0 auto;
+  max-width: 1400px;
+}
+.page__body {
   max-width: 1040px;
 }
-.page--wide {
-  max-width: 1400px;
+.page__body--wide {
+  max-width: none;
 }
 .page__header {
   display: flex;
